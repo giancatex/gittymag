@@ -1,0 +1,3083 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="logo-gitty-mag.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gitty Mag - Inventario</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#007BFF"/>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="logo-gitty-mag.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+      :root {
+          --brand-blue: #007BFF;
+          --brand-lime: #A3E635;
+          --brand-steel: #4B5563;
+      }
+      body {
+          font-family: 'Poppins', sans-serif;
+          background-color: #f3f4f6;
+      }
+      h1, h2, h3, h4, h5, h6 {
+          font-family: 'Montserrat', sans-serif;
+          font-weight: 700;
+      }
+      .view {
+        display: none;
+      }
+      .view.active {
+        display: block;
+      }
+      @keyframes fade-in-up {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .animate-fade-in-up {
+        animation: fade-in-up 0.3s ease-out forwards;
+      }
+      .pinch-zoom-container table {
+          table-layout: auto;
+          width: 100%;
+      }
+      .pinch-zoom-container th,
+      .pinch-zoom-container td {
+          white-space: nowrap;
+      }
+      .wrap-text {
+        white-space: normal !important;
+        word-break: break-word;
+      }
+      .no-wrap {
+        white-space: nowrap !important;
+      }
+      .nav-item-disabled {
+        pointer-events: none;
+        opacity: 0.5;
+      }
+      /* Style adjustment for the modal to be higher on mobile */
+      #cellulose-entry-modal {
+        align-items: flex-start;
+      }
+    </style>
+</head>
+  <body>
+    <!-- Mode Selection Screen -->
+    <div id="mode-selection" class="flex items-center justify-center min-h-screen bg-gray-50">
+        <div class="text-center p-8 max-w-md w-full">
+            <img src="logo-gitty-mag.png" alt="Gitty Mag Logo" class="h-20 mx-auto mb-4" />
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Seleziona Modalità</h1>
+            <p class="text-gray-500 mb-8">Scegli il tipo di inventario che vuoi effettuare.</p>
+            <div class="space-y-4">
+                <button data-mode="additives" class="mode-select-btn w-full text-left p-6 bg-white rounded-lg shadow-md hover:shadow-lg hover:border-blue-500 border-2 border-transparent transition-all duration-300 flex items-center space-x-4">
+                    <div class="p-3 rounded-full bg-blue-100">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-800">Modalità Additivi</h2>
+                        <p class="text-gray-600">Gestione inventario per additivi e materie prime.</p>
+                    </div>
+                </button>
+                <button data-mode="cellulose" class="mode-select-btn w-full text-left p-6 bg-white rounded-lg shadow-md hover:shadow-lg hover:border-green-500 border-2 border-transparent transition-all duration-300 flex items-center space-x-4">
+                     <div class="p-3 rounded-full bg-green-100">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-gray-800">Modalità Cellulosa</h2>
+                        <p class="text-gray-600">Conteggio e gestione delle balle di cellulosa.</p>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app-container" class="relative min-h-screen hidden">
+      <!-- Sidebar Overlay -->
+      <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden hidden"></div>
+
+      <!-- Sidebar -->
+      <aside id="sidebar" class="fixed inset-y-0 left-0 bg-white shadow-md w-64 z-30 transform transition-transform duration-300 ease-in-out -translate-x-full lg:relative lg:translate-x-0 overflow-y-auto">
+          <div class="p-6 text-center">
+              <div class="mb-2">
+                  <img src="logo-gitty-mag.png" alt="Gitty Mag Logo" class="h-20 mx-auto" />
+                  <p class="text-sm font-semibold text-gray-700 mt-2">Il magazzino, in un tap.</p>
+              </div>
+          </div>
+          <nav id="main-nav" class="p-4 space-y-2">
+              <a href="#" id="change-mode-btn" class="flex items-center p-3 rounded-lg text-gray-700 hover:bg-gray-200 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L9.414 11H13a1 1 0 100-2H9.414l1.293-1.293z" clip-rule="evenodd" /></svg>
+                Cambia Modalità
+              </a>
+              <hr class="my-2 border-gray-200">
+              <div id="additives-nav-items">
+                <a href="#start" data-view="start" class="nav-item flex items-center p-3 rounded-lg text-gray-700 hover:bg-blue-100 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                  Inizia Inventario
+                </a>
+                <a href="#entry" data-view="entry" class="nav-item flex items-center p-3 rounded-lg text-gray-700 hover:bg-blue-100 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110 2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                  Inserimento Materiale
+                </a>
+                <a href="#view" data-view="view" class="nav-item flex items-center p-3 rounded-lg text-gray-700 hover:bg-blue-100 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" /></svg>
+                  Visualizza Rilevazioni
+                </a>
+                <a href="#check" data-view="check" class="nav-item flex items-center p-3 rounded-lg text-gray-700 hover:bg-blue-100 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                  Verifica Inventario
+                </a>
+                <a href="#export" data-view="export" class="nav-item flex items-center p-3 rounded-lg text-gray-700 hover:bg-blue-100 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" /><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" /></svg>
+                  Esporta
+                </a>
+                <a href="#master" data-view="master" class="nav-item flex items-center p-3 rounded-lg text-gray-700 hover:bg-blue-100 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.532 1.532 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.532 1.532 0 01-.947-2.287c1.561-.379-1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg>
+                  Anagrafica
+                </a>
+              </div>
+
+              <div id="cellulose-nav-items" class="hidden">
+                 <a href="#cellulose-start" data-view="cellulose-start" class="nav-item flex items-center p-3 rounded-lg text-gray-700 hover:bg-green-100 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                    Inizia Inventario
+                 </a>
+                 <a href="#cellulose-entry" id="nav-cellulose-entry" data-view="cellulose-entry" class="nav-item flex items-center p-3 rounded-lg text-gray-700 hover:bg-green-100 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110 2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                    Inserimento Conteggio
+                 </a>
+                 <a href="#cellulose-view" id="nav-cellulose-view" data-view="cellulose-view" class="nav-item flex items-center p-3 rounded-lg text-gray-700 hover:bg-green-100 transition-colors">
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" /></svg>
+                     Visualizza Rilevazioni
+                 </a>
+                 <a href="#cellulose-check" id="nav-cellulose-check" data-view="cellulose-check" class="nav-item flex items-center p-3 rounded-lg text-gray-700 hover:bg-green-100 transition-colors">
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                     Verifica Inventario
+                 </a>
+                 <a href="#cellulose-export" id="nav-cellulose-export" data-view="cellulose-export" class="nav-item flex items-center p-3 rounded-lg text-gray-700 hover:bg-green-100 transition-colors">
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" /><path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" /></svg>
+                     Esporta
+                 </a>
+                 <a href="#cellulose-master" data-view="cellulose-master" class="nav-item flex items-center p-3 rounded-lg text-gray-700 hover:bg-green-100 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.532 1.532 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.532 1.532 0 01-.947-2.287c1.561-.379-1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg>
+                    Anagrafica Cellulosa
+                 </a>
+              </div>
+              <hr class="my-2 border-gray-200">
+               <a href="#info" data-view="info" class="nav-item flex items-center p-3 rounded-lg text-gray-700 hover:bg-gray-200 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                Info
+              </a>
+          </nav>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="flex-1 p-0 lg:p-4 bg-gray-100 overflow-y-auto">
+        <div class="lg:p-0 p-4">
+             <!-- Header for mobile -->
+            <header class="lg:hidden flex justify-between items-center mb-4">
+                <div class="flex items-center">
+                    <img src="logo-gitty-mag.png" alt="Gitty Mag Logo" class="h-8" />
+                </div>
+                <button id="menu-button" class="p-2">
+                    <svg class="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+            </header>
+        </div>
+        
+        <!-- === ADDITIVES VIEWS === -->
+
+        <!-- Start View -->
+        <div id="view-start" class="view p-4 sm:p-6 lg:p-8">
+          <div id="start-view-content" class="bg-white rounded-lg shadow-md p-6 lg:p-8 max-w-3xl mx-auto animate-fade-in-up">
+            <!-- Content will be added by JS -->
+          </div>
+        </div>
+        
+        <!-- Entry View -->
+        <div id="view-entry" class="view p-4 sm:p-6 lg:p-8">
+            <div class="max-w-4xl mx-auto animate-fade-in-up space-y-6">
+                <div class="bg-white rounded-lg shadow-md p-6 lg:p-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Inserimento Rilevazione</h2>
+                    <div id="entry-form-disabled-message" class="hidden p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50" role="alert">
+                      <span class="font-medium">Anagrafica vuota!</span> Per favore, vai alla sezione "Anagrafica" e carica un file per iniziare.
+                    </div>
+                    <div id="entry-form-fields" class="space-y-4">
+                        <div class="relative">
+                            <label for="materialDescription" class="block text-sm font-medium text-gray-700">Descrizione Materiale</label>
+                            <input type="text" id="materialDescription" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Inizia a digitare...">
+                            <button id="clear-description-btn" class="absolute inset-y-0 right-0 top-6 pr-3 flex items-center hidden">
+                                <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" /></svg>
+                            </button>
+                            <div id="autocomplete-results" class="absolute z-10 w-full mt-1 bg-white rounded-md shadow-lg max-h-60 overflow-auto hidden"></div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label for="quantity" class="block text-sm font-medium text-gray-700">Quantità</label>
+                                <input type="number" id="quantity" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="uom" class="block text-sm font-medium text-gray-700">Unità di Misura</label>
+                                <select id="uom" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></select>
+                            </div>
+                            <div class="self-end">
+                                <button id="add-detection-btn" class="w-full bg-blue-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-blue-700 transition-colors">Aggiungi</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">Riepilogo Materiale</h3>
+                        <dl class="space-y-2">
+                          <div class="flex justify-between items-baseline">
+                            <dt class="text-sm font-medium text-gray-500">Giacenza SAP:</dt>
+                            <dd id="entry-sap-stock" class="text-lg font-semibold text-gray-800">0.00 KG</dd>
+                          </div>
+                          <div class="flex justify-between items-baseline">
+                            <dt class="text-sm font-medium text-gray-500">Rilevato Oggi:</dt>
+                            <dd id="entry-detected-today" class="text-lg font-semibold text-blue-600">0.00 KG</dd>
+                          </div>
+                        </dl>
+                    </div>
+
+                    <div id="conversion-factors-card" class="bg-white rounded-lg shadow-md p-6 hidden">
+                        <h3 class="text-lg font-bold text-gray-800 mb-2">Fattori Conversione</h3>
+                        <p id="conversion-material-name" class="text-sm text-gray-500 mb-4 truncate"></p>
+                        <div id="conversion-factors-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Ultime Rilevazioni</h3>
+                    <div id="recent-detections-container">
+                        <!-- Content will be added by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View Detections View -->
+        <div id="view-view" class="view p-4 sm:p-6 lg:p-8">
+            <div class="bg-white rounded-lg shadow-md max-w-7xl mx-auto animate-fade-in-up">
+                <div class="p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Visualizza Rilevazioni</h2>
+                    <input type="text" id="view-detections-filter" placeholder="Filtra per descrizione o codice..." class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                </div>
+                <div id="view-detections-totals" class="hidden flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x border-t border-b">
+                   <!-- Totals here -->
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                      <thead class="bg-gray-50">
+                        <tr>
+                          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrizione Materiale</th>
+                          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantità</th>
+                          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UM</th>
+                          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KG</th>
+                          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ora</th>
+                          <th scope="col" class="relative px-6 py-3"><span class="sr-only">Azioni</span></th>
+                        </tr>
+                      </thead>
+                      <tbody id="view-detections-tbody" class="bg-white divide-y divide-gray-200">
+                        <!-- Content will be added by JS -->
+                      </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Check View -->
+        <div id="view-check" class="view p-4 sm:p-6 lg:p-8">
+            <div class="max-w-7xl mx-auto animate-fade-in-up">
+                <div class="border-b border-gray-200">
+                    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                        <button data-subview="checkEntries" class="check-subview-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Verifica Inserimenti</button>
+                        <button data-subview="viewInventory" class="check-subview-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Anteprima Riepilogo</button>
+                    </nav>
+                </div>
+                <div id="check-subview-content" class="mt-6">
+                    <!-- Content will be added by JS -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Export View -->
+        <div id="view-export" class="view p-4 sm:p-6 lg:p-8">
+            <div class="bg-white rounded-lg shadow-md p-6 lg:p-8 max-w-3xl mx-auto text-center animate-fade-in-up">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Esporta Inventario</h2>
+                <p class="text-gray-500 mb-6">Genera un file Excel con il riepilogo e il dettaglio delle rilevazioni effettuate.</p>
+                <button id="export-btn" class="w-full justify-center px-4 py-3 rounded-md font-semibold text-white transition-colors bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400">
+                    Esporta File Excel
+                </button>
+            </div>
+        </div>
+
+        <!-- Master Data View -->
+        <div id="view-master" class="view p-4 sm:p-6 lg:p-8">
+            <div class="bg-white rounded-lg shadow-md max-w-7xl mx-auto animate-fade-in-up">
+                <div class="p-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                         <h2 class="text-2xl font-bold text-gray-800 mb-4 sm:mb-0">Anagrafica Materiali (Additivi)</h2>
+                         <div class="flex items-center space-x-2">
+                             <label for="masterDataFile" class="btn bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md font-semibold text-sm cursor-pointer">Carica File</label>
+                             <input type="file" id="masterDataFile" accept=".xlsx, .csv" class="hidden" />
+                             <button id="master-export-btn" class="btn bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md font-semibold text-sm">Esporta</button>
+                         </div>
+                    </div>
+                     <p class="text-sm text-gray-500 mt-2">Carica un file Excel o CSV con colonne 'codice', 'descrizione' e colonne opzionali per i fattori di conversione (es. IBC, SAC, FUS).</p>
+                    <div class="mt-4 flex items-center justify-between">
+                         <input type="text" id="master-data-filter" placeholder="Filtra per descrizione o codice..." class="flex-grow rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                         <button id="master-add-article-btn" class="ml-4 btn bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-semibold text-sm">Aggiungi</button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                      <thead class="bg-gray-50">
+                        <tr>
+                          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Codice</th>
+                          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrizione</th>
+                          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fattori Conversione</th>
+                          <th scope="col" class="relative px-6 py-3"><span class="sr-only">Azioni</span></th>
+                        </tr>
+                      </thead>
+                      <tbody id="master-tbody" class="bg-white divide-y divide-gray-200">
+                        <!-- Content will be added by JS -->
+                      </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Master Data Edit View -->
+        <div id="view-master-edit" class="view p-4 sm:p-6 lg:p-8">
+            <div class="bg-white rounded-lg shadow-md p-6 lg:p-8 max-w-3xl mx-auto animate-fade-in-up">
+                 <h2 id="master-edit-title" class="text-2xl font-bold text-gray-800 mb-6"></h2>
+                 <form id="master-edit-form" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Codice Materiale</label>
+                        <div id="master-edit-code"></div>
+                    </div>
+                     <div>
+                        <label class="block text-sm font-medium text-gray-700">Descrizione</label>
+                        <div id="master-edit-description"></div>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Fattori di Conversione (1 Unità = X KG)</h3>
+                        <div id="master-edit-factors-container" class="space-y-3"></div>
+                    </div>
+                    <div class="border-t pt-6">
+                        <h4 class="font-medium text-gray-800 mb-2">Aggiungi nuovo fattore</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <input type="text" id="master-edit-new-uom" placeholder="Nome Unità (es. IBC)" class="col-span-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <input type="number" id="master-edit-new-factor" placeholder="Fattore (es. 1000)" class="col-span-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <button type="button" id="master-edit-add-factor-btn" class="bg-gray-200 text-gray-700 hover:bg-gray-300 px-4 py-2 rounded-md font-semibold text-sm">Aggiungi Fattore</button>
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-4 pt-4">
+                        <button type="button" id="master-edit-cancel-btn" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">Annulla</button>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-blue-700">Salva Modifiche</button>
+                    </div>
+                 </form>
+            </div>
+        </div>
+
+        <!-- === CELLULOSE VIEWS === -->
+
+        <!-- Cellulose Start View -->
+        <div id="view-cellulose-start" class="view p-4 sm:p-6 lg:p-8">
+            <div id="cellulose-start-view-content" class="bg-white rounded-lg shadow-md p-6 lg:p-8 max-w-3xl mx-auto text-center animate-fade-in-up">
+                <!-- Content generated by JS -->
+            </div>
+        </div>
+
+        <!-- Cellulose Entry View -->
+        <div id="view-cellulose-entry" class="view p-4 sm:p-6 lg:p-8">
+            <div class="bg-white rounded-lg shadow-md max-w-7xl mx-auto animate-fade-in-up">
+                <div class="p-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Inserimento Conteggio Cellulosa</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-2 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/2">Materiale</th>
+                                <th scope="col" class="px-2 md:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Unità di Inserimento</th>
+                                <th scope="col" class="px-2 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Totale</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cellulose-entry-tbody" class="bg-white divide-y divide-gray-200">
+                            <!-- Content generated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cellulose View Detections -->
+        <div id="view-cellulose-view" class="view p-4 sm:p-6 lg:p-8">
+             <div class="bg-white rounded-lg shadow-md max-w-7xl mx-auto animate-fade-in-up">
+                <div class="p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Visualizza Rilevazioni Cellulosa</h2>
+                    <input type="text" id="cellulose-view-filter" placeholder="Filtra per descrizione o codice..." class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm">
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                      <thead class="bg-gray-50">
+                        <tr>
+                          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrizione Materiale</th>
+                          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantità</th>
+                          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UM</th>
+                          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ora</th>
+                        </tr>
+                      </thead>
+                      <tbody id="cellulose-view-tbody" class="bg-white divide-y divide-gray-200">
+                        <!-- Content will be added by JS -->
+                      </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cellulose Check View -->
+        <div id="view-cellulose-check" class="view p-4 sm:p-6 lg:p-8">
+            <div class="max-w-7xl mx-auto animate-fade-in-up">
+                <div class="border-b border-gray-200">
+                    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                        <button id="cellulose-check-tab-not-counted" class="cellulose-check-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Materiali non Rilevati</button>
+                        <button id="cellulose-check-tab-previous-inventory" class="cellulose-check-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Inventario Precedente</button>
+                    </nav>
+                </div>
+                <div id="cellulose-check-content" class="mt-6">
+                    <!-- Content will be added by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Cellulose Export View -->
+        <div id="view-cellulose-export" class="view p-4 sm:p-6 lg:p-8">
+            <div class="bg-white rounded-lg shadow-md p-6 lg:p-8 max-w-3xl mx-auto animate-fade-in-up space-y-8">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-800 mb-2">Esporta Inventario Attuale</h2>
+                    <p class="text-gray-500 mb-4 text-sm">Genera un file Excel con il riepilogo e il dettaglio dei conteggi correnti. Questo file può essere importato come "inventario precedente" in futuro.</p>
+                    <button id="cellulose-export-current-btn" class="w-full justify-center px-4 py-3 rounded-md font-semibold text-white transition-colors bg-green-600 hover:bg-green-700 disabled:bg-gray-400">
+                        Esporta Inventario Attuale
+                    </button>
+                </div>
+                <div class="border-t pt-8">
+                    <h2 class="text-xl font-bold text-gray-800 mb-2">Imposta come Inventario Precedente</h2>
+                    <p class="text-gray-500 mb-4 text-sm">Salva i dati di questo inventario come storico. Verranno usati per i confronti futuri e saranno visibili nella sezione "Scorso Inventario". L'operazione sovrascrive lo storico precedente.</p>
+                    <button id="cellulose-set-as-previous-btn" class="w-full justify-center px-4 py-3 rounded-md font-semibold text-white transition-colors bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-400">
+                        Imposta come Precedente
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Cellulose Master View -->
+        <div id="view-cellulose-master" class="view p-4 sm:p-6 lg:p-8">
+            <div class="bg-white rounded-lg shadow-md max-w-7xl mx-auto animate-fade-in-up">
+                 <div class="p-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                        <h2 class="text-2xl font-bold text-gray-800 shrink-0">Anagrafica Cellulosa</h2>
+                        <div class="w-full sm:w-auto grid grid-cols-2 gap-2">
+                            <label for="celluloseMasterDataFile" class="btn text-center bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-md font-semibold text-sm cursor-pointer">Carica</label>
+                            <input type="file" id="celluloseMasterDataFile" accept=".xlsx, .csv" class="hidden" />
+                            <button id="cellulose-master-export-btn" class="btn bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-md font-semibold text-sm">Esporta</button>
+                            <button id="cellulose-master-add-btn" class="btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md font-semibold text-sm">Aggiungi</button>
+                            <button id="cellulose-master-delete-all-btn" class="btn bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-md font-semibold text-sm">Cancella Tutto</button>
+                        </div>
+                   </div>
+                    <p class="text-sm text-gray-500 mb-4">Carica o gestisci l'anagrafica della cellulosa.</p>
+                    <input type="text" id="cellulose-master-data-filter" placeholder="Filtra per descrizione, codice o gruppo..." class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm">
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                      <thead class="bg-gray-50">
+                        <tr>
+                          <th scope="col" class="px-2 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Codice</th>
+                          <th scope="col" class="px-2 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrizione</th>
+                          <th scope="col" class="px-2 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gruppo</th>
+                           <th scope="col" class="px-2 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gestione</th>
+                          <th scope="col" class="relative px-6 py-3"><span class="sr-only">Azioni</span></th>
+                        </tr>
+                      </thead>
+                      <tbody id="cellulose-master-tbody" class="bg-white divide-y divide-gray-200">
+                        <!-- Content will be added by JS -->
+                      </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cellulose Master Edit View -->
+        <div id="view-cellulose-master-edit" class="view p-4 sm:p-6 lg:p-8">
+             <div class="bg-white rounded-lg shadow-md p-6 lg:p-8 max-w-3xl mx-auto animate-fade-in-up">
+                 <h2 id="cellulose-master-edit-title" class="text-2xl font-bold text-gray-800 mb-6"></h2>
+                 <form id="cellulose-master-edit-form" class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                          <label for="cellulose-edit-code" class="block text-sm font-medium text-gray-700">Codice Materiale</label>
+                          <input type="text" id="cellulose-edit-code" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm bg-gray-50 read-only:cursor-not-allowed">
+                      </div>
+                      <div>
+                          <label for="cellulose-edit-seq" class="block text-sm font-medium text-gray-700">Sequenza Elenco</label>
+                          <input type="number" id="cellulose-edit-seq" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm">
+                      </div>
+                    </div>
+                    <div>
+                        <label for="cellulose-edit-description" class="block text-sm font-medium text-gray-700">Descrizione</label>
+                        <input type="text" id="cellulose-edit-description" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm">
+                    </div>
+                     <div>
+                        <label for="cellulose-edit-group" class="block text-sm font-medium text-gray-700">Nome Gruppo Origine</label>
+                        <input type="text" id="cellulose-edit-group" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <p class="block text-sm font-medium text-gray-700">Unità di Misura (compilare solo un campo)</p>
+                        <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="cellulose-edit-pac" class="block text-xs text-gray-600">BAL per 1 PAC</label>
+                                <input type="number" id="cellulose-edit-pac" placeholder="Es. 8" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="cellulose-edit-camion" class="block text-xs text-gray-600">KG per 1 CAMION</label>
+                                <input type="number" id="cellulose-edit-camion" placeholder="Es. 28000" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-4 pt-4">
+                        <button type="button" id="cellulose-master-edit-cancel-btn" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">Annulla</button>
+                        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-green-700">Salva</button>
+                    </div>
+                 </form>
+            </div>
+        </div>
+        
+        <!-- Info View -->
+        <div id="view-info" class="view p-4 sm:p-6 lg:p-8">
+            <div class="bg-white rounded-lg shadow-md p-8 max-w-2xl mx-auto animate-fade-in-up">
+                <div class="text-center">
+                    <img src="logo-gitty-mag-creator.png" alt="Creator Logo" class="h-24 mx-auto mb-6" />
+                </div>
+
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Mission</h3>
+                <p class="text-gray-600 mb-6">"Semplificare il conteggio e la gestione del magazzino, trasformandoli in un'operazione rapida e senza stress."</p>
+
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Versione</h3>
+                <p class="text-gray-600 mb-6">Gitty Mag v.2.2 (PWA Edition)</p>
+
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Supporto e Segnalazioni</h3>
+                <p class="text-gray-600 mb-6">Per problemi tecnici o suggerimenti, contattare:<br>
+                    <a href="mailto:giancarlo.tessarolo@favini.com" class="text-blue-600 hover:underline">giancarlo.tessarolo@favini.com</a>
+                </p>
+                
+                <div class="border-t pt-4 mt-8 text-center text-sm text-gray-500">
+                    <p>&copy; 2024 Giancarlo Tessarolo - Tutti i diritti riservati.</p>
+                </div>
+            </div>
+        </div>
+
+      </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- Confirmation Modal -->
+    <div id="confirmation-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50 hidden">
+      <div class="relative mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+          <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
+             <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          </div>
+          <h3 class="text-lg leading-6 font-medium text-gray-900 mt-4">Attenzione</h3>
+          <div class="mt-2 px-7 py-3">
+            <p id="modal-message" class="text-sm text-gray-500"></p>
+          </div>
+          <div class="items-center px-4 py-3 space-x-4">
+            <button id="modal-cancel-btn" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Annulla</button>
+            <button id="modal-confirm-btn" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">Conferma</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Alert Modal -->
+    <div id="alert-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50 hidden">
+      <div class="relative mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+          <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100">
+            <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          </div>
+          <h3 class="text-lg leading-6 font-medium text-gray-900 mt-4">Informazione</h3>
+          <div class="mt-2 px-7 py-3">
+            <p id="alert-message" class="text-sm text-gray-500"></p>
+          </div>
+          <div class="items-center px-4 py-3">
+            <button id="alert-ok-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 w-full">OK</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Update Notification -->
+    <div id="update-notification" class="hidden fixed bottom-4 right-4 bg-white shadow-lg rounded-lg p-4 z-50 items-center space-x-4">
+        <p class="text-sm font-medium text-gray-800">Nuova versione disponibile!</p>
+        <button id="update-btn" class="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-md hover:bg-blue-700">Aggiorna</button>
+    </div>
+    
+    <!-- Cellulose Entry Modal -->
+    <div id="cellulose-entry-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full hidden z-40 flex justify-center pt-16 sm:pt-0 sm:items-center">
+        <div class="relative mx-auto p-5 border w-11/12 max-w-lg shadow-lg rounded-md bg-white">
+            <div class="flex justify-between items-center border-b pb-3 mb-3">
+                <h3 id="cellulose-modal-title" class="text-lg font-bold text-gray-800"></h3>
+                <button id="cellulose-modal-close-btn" class="p-1 rounded-full hover:bg-gray-200">
+                    <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="max-h-[60vh] overflow-y-auto p-2" id="cellulose-modal-entries-list">
+                <!-- Entries generated by JS -->
+            </div>
+            <div class="mt-4 pt-4 border-t space-y-3">
+                 <div class="flex items-center gap-2">
+                    <button id="cellulose-modal-insert-btn" class="flex-1 btn bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md font-semibold text-sm">INSERISCI</button>
+                    <button id="cellulose-modal-edit-btn" class="flex-1 btn bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-md font-semibold text-sm">MODIFICA</button>
+                    <button id="cellulose-modal-delete-all-btn" class="flex-1 btn bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md font-semibold text-sm">ELIMINA TUTTO</button>
+                 </div>
+                 <button id="cellulose-modal-show-previous-btn" class="w-full btn bg-blue-100 text-blue-800 hover:bg-blue-200 px-4 py-2 rounded-md font-semibold text-sm">Visualizza Scorso Inventario</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Cellulose Previous Inventory Modal -->
+     <div id="cellulose-previous-inventory-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full flex items-center justify-center z-50 hidden">
+        <div class="relative mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white">
+            <div class="flex justify-between items-center border-b pb-3 mb-3">
+                <h3 id="cellulose-previous-modal-title" class="text-lg font-bold text-gray-800"></h3>
+                <button id="cellulose-previous-modal-close-btn" class="p-1 rounded-full hover:bg-gray-200">
+                    <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="max-h-[60vh] overflow-y-auto p-2" id="cellulose-previous-modal-content">
+                <!-- Content generated by JS -->
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+// Gitty Mag - Vanilla JS Edition
+
+// The XLSX object is already available globally thanks to the script tag in the head.
+
+// --- STATE MANAGEMENT ---
+let activeMode = null; // 'additives' or 'cellulose'
+let activeView = 'start';
+
+// Centralized state management for both modes
+let appState = {
+    additives: {
+        masterData: [],
+        previousInventory: {},
+        currentDetections: [],
+    },
+    cellulose: {
+        masterData: [],
+        celluloseCounts: {},
+        inventoryInProgress: false,
+        previousInventory: {},
+    }
+};
+
+// State for UI components
+let activeCelluloseEntry = { material: null, uom: null, editMode: false, isPrevious: false };
+let celluloseCheckActiveTab = 'not-counted';
+let cellulosePreviousInventoryEditMode = false;
+
+let isSidebarOpen = false;
+let waitingWorker = null;
+let modalConfirmCallback = null;
+let editingDetectionTimestamp = null;
+let editingMasterDataId = null; // Tracks the material being edited
+let editingCelluloseMasterId = null;
+let selectedMaterial = null; // The currently selected material in the entry form
+let autocompleteVisible = false;
+
+// --- DOM ELEMENT REFERENCES ---
+
+// Layout
+const modeSelectionScreen = document.getElementById('mode-selection');
+const appContainer = document.getElementById('app-container');
+const sidebar = document.getElementById('sidebar');
+const sidebarOverlay = document.getElementById('sidebar-overlay');
+const menuButton = document.getElementById('menu-button');
+const mainNav = document.getElementById('main-nav');
+const views = document.querySelectorAll('.view');
+const additivesNavItems = document.getElementById('additives-nav-items');
+const celluloseNavItems = document.getElementById('cellulose-nav-items');
+const navCelluloseEntry = document.getElementById('nav-cellulose-entry');
+const navCelluloseView = document.getElementById('nav-cellulose-view');
+const navCelluloseCheck = document.getElementById('nav-cellulose-check');
+const navCelluloseExport = document.getElementById('nav-cellulose-export');
+
+
+// Mode Selection
+const modeSelectButtons = document.querySelectorAll('.mode-select-btn');
+const changeModeBtn = document.getElementById('change-mode-btn');
+
+// Modal Elements
+const confirmationModal = document.getElementById('confirmation-modal');
+const modalMessage = document.getElementById('modal-message');
+const modalCancelBtn = document.getElementById('modal-cancel-btn');
+const modalConfirmBtn = document.getElementById('modal-confirm-btn');
+
+// Alert Modal Elements
+const alertModal = document.getElementById('alert-modal');
+const alertMessage = document.getElementById('alert-message');
+const alertOkBtn = document.getElementById('alert-ok-btn');
+
+// Update Notification Elements
+const updateNotification = document.getElementById('update-notification');
+const updateBtn = document.getElementById('update-btn');
+
+// Start View (Additives)
+const startViewContent = document.getElementById('start-view-content');
+
+// Entry View (Additives)
+const entryFormDisabledMessage = document.getElementById('entry-form-disabled-message');
+const entryFormFields = document.getElementById('entry-form-fields');
+const materialDescriptionInput = document.getElementById('materialDescription');
+const clearDescriptionBtn = document.getElementById('clear-description-btn');
+const autocompleteResults = document.getElementById('autocomplete-results');
+const quantityInput = document.getElementById('quantity');
+const uomSelect = document.getElementById('uom');
+const addDetectionBtn = document.getElementById('add-detection-btn');
+const entrySapStockSpan = document.getElementById('entry-sap-stock');
+const entryDetectedTodaySpan = document.getElementById('entry-detected-today');
+const recentDetectionsContainer = document.getElementById('recent-detections-container');
+const conversionFactorsCard = document.getElementById('conversion-factors-card');
+const conversionMaterialName = document.getElementById('conversion-material-name');
+const conversionFactorsGrid = document.getElementById('conversion-factors-grid');
+
+// View Detections View
+const viewDetectionsFilter = document.getElementById('view-detections-filter');
+const viewDetectionsTbody = document.getElementById('view-detections-tbody');
+const viewDetectionsTotals = document.getElementById('view-detections-totals');
+
+// Check View (Additives)
+const checkSubviewButtons = document.querySelectorAll('.check-subview-btn');
+const checkSubviewContent = document.getElementById('check-subview-content');
+
+// Export View (Additives)
+const exportBtn = document.getElementById('export-btn');
+
+// Master Data List View (Additives)
+const masterDataFilter = document.getElementById('master-data-filter');
+const masterTbody = document.getElementById('master-tbody');
+const masterAddArticleBtn = document.getElementById('master-add-article-btn');
+const masterExportBtn = document.getElementById('master-export-btn');
+const masterDataFileInput = document.getElementById('masterDataFile');
+
+// Master Data Edit View (Additives)
+const masterEditTitle = document.getElementById('master-edit-title');
+const masterEditForm = document.getElementById('master-edit-form');
+const masterEditCode = document.getElementById('master-edit-code');
+const masterEditDescription = document.getElementById('master-edit-description');
+const masterEditFactorsContainer = document.getElementById('master-edit-factors-container');
+const masterEditNewUom = document.getElementById('master-edit-new-uom');
+const masterEditNewFactor = document.getElementById('master-edit-new-factor');
+const masterEditAddFactorBtn = document.getElementById('master-edit-add-factor-btn');
+const masterEditCancelBtn = document.getElementById('master-edit-cancel-btn');
+
+// Cellulose Start View
+const celluloseStartViewContent = document.getElementById('cellulose-start-view-content');
+
+// Cellulose Entry View
+const celluloseEntryTbody = document.getElementById('cellulose-entry-tbody');
+
+// Cellulose View Detections
+const celluloseViewFilter = document.getElementById('cellulose-view-filter');
+const celluloseViewTbody = document.getElementById('cellulose-view-tbody');
+
+// Cellulose Check View
+const celluloseCheckTabs = document.querySelectorAll('.cellulose-check-tab');
+const celluloseCheckContent = document.getElementById('cellulose-check-content');
+
+// Cellulose Export View
+const celluloseExportCurrentBtn = document.getElementById('cellulose-export-current-btn');
+const celluloseSetAsPreviousBtn = document.getElementById('cellulose-set-as-previous-btn');
+
+// Cellulose Entry Modal
+const celluloseEntryModal = document.getElementById('cellulose-entry-modal');
+const celluloseModalTitle = document.getElementById('cellulose-modal-title');
+const celluloseModalCloseBtn = document.getElementById('cellulose-modal-close-btn');
+const celluloseModalInsertBtn = document.getElementById('cellulose-modal-insert-btn');
+const celluloseModalEditBtn = document.getElementById('cellulose-modal-edit-btn');
+const celluloseModalDeleteAllBtn = document.getElementById('cellulose-modal-delete-all-btn');
+const celluloseModalEntriesList = document.getElementById('cellulose-modal-entries-list');
+const celluloseModalShowPreviousBtn = document.getElementById('cellulose-modal-show-previous-btn');
+
+// Cellulose Previous Inventory Modal
+const cellulosePreviousInventoryModal = document.getElementById('cellulose-previous-inventory-modal');
+const cellulosePreviousModalTitle = document.getElementById('cellulose-previous-modal-title');
+const cellulosePreviousModalCloseBtn = document.getElementById('cellulose-previous-modal-close-btn');
+const cellulosePreviousModalContent = document.getElementById('cellulose-previous-modal-content');
+
+// Cellulose Master View
+const celluloseMasterDataFilter = document.getElementById('cellulose-master-data-filter');
+const celluloseMasterTbody = document.getElementById('cellulose-master-tbody');
+const celluloseMasterExportBtn = document.getElementById('cellulose-master-export-btn');
+const celluloseMasterDataFileInput = document.getElementById('celluloseMasterDataFile');
+const celluloseMasterAddBtn = document.getElementById('cellulose-master-add-btn');
+const celluloseMasterDeleteAllBtn = document.getElementById('cellulose-master-delete-all-btn');
+
+// Cellulose Master Edit View
+const celluloseMasterEditTitle = document.getElementById('cellulose-master-edit-title');
+const celluloseMasterEditForm = document.getElementById('cellulose-master-edit-form');
+const celluloseEditCode = document.getElementById('cellulose-edit-code');
+const celluloseEditSeq = document.getElementById('cellulose-edit-seq');
+const celluloseEditDescription = document.getElementById('cellulose-edit-description');
+const celluloseEditGroup = document.getElementById('cellulose-edit-group');
+const celluloseEditPac = document.getElementById('cellulose-edit-pac');
+const celluloseEditCamion = document.getElementById('cellulose-edit-camion');
+const celluloseMasterEditCancelBtn = document.getElementById('cellulose-master-edit-cancel-btn');
+
+
+// --- DATA & UTILITY FUNCTIONS ---
+
+const formatCelluloseDescription = (description) => {
+    if (!description) return '';
+    // Hides "cellulosa/cellulose/cell." and variants with "di" at the beginning of the string for better readability on mobile
+    return description.replace(/^(cellulosa\s+di\s+|cellulose\s+di\s+|cellulosa greggia\s+|cell(ulosa|ulose|.)\s*)/i, '');
+};
+
+const getKgValue = (code, quantity, uom) => {
+    const material = appState.additives.masterData.find(m => m.code === code);
+    if (!material) return 0;
+    // Quantity is already in KG
+    if (String(uom).toUpperCase() === 'KG') return Number(quantity);
+    // Find the conversion factor, case-insensitively
+    const factorKey = Object.keys(material).find(k => k.toUpperCase() === String(uom).toUpperCase());
+    const factor = factorKey ? Number(material[factorKey] || 0) : 0;
+    return Number(quantity) * factor;
+};
+
+// --- LOCAL STORAGE ---
+const saveData = () => {
+    try {
+        localStorage.setItem('gittyMagAppState', JSON.stringify(appState));
+    } catch (error) {
+        console.error("Failed to save data to localStorage", error);
+    }
+};
+
+const loadData = () => {
+    try {
+        const savedState = localStorage.getItem('gittyMagAppState');
+        if (savedState) {
+            const parsedState = JSON.parse(savedState);
+            // Ensure all keys exist to prevent errors with old data structures
+            appState = {
+                additives: { ...appState.additives, ...parsedState.additives },
+                cellulose: { ...appState.cellulose, ...parsedState.cellulose }
+            };
+            // Manually add the new properties if they're missing from old saved state
+            if (typeof appState.cellulose.inventoryInProgress === 'undefined') {
+                appState.cellulose.inventoryInProgress = Object.keys(appState.cellulose.celluloseCounts || {}).length > 0;
+            }
+            if (typeof appState.cellulose.previousInventory === 'undefined') {
+                appState.cellulose.previousInventory = {};
+            }
+        }
+    } catch (error) {
+        console.error("Failed to load data from localStorage", error);
+        resetAllState();
+    }
+};
+
+
+// Reset in-memory state variables
+const resetStateForMode = (mode) => {
+    if (mode === 'additives') {
+        appState.additives = { masterData: [], previousInventory: {}, currentDetections: [] };
+    } else if (mode === 'cellulose') {
+        appState.cellulose = { masterData: [], celluloseCounts: {}, inventoryInProgress: false, previousInventory: {} };
+    }
+    editingDetectionTimestamp = null;
+    editingMasterDataId = null;
+    editingCelluloseMasterId = null;
+    selectedMaterial = null;
+    autocompleteVisible = false;
+    activeCelluloseEntry = { material: null, uom: null, editMode: false, isPrevious: false };
+};
+
+const resetAllState = () => {
+    resetStateForMode('additives');
+    resetStateForMode('cellulose');
+}
+
+const migrateOldData = () => {
+    const oldMaster = localStorage.getItem('gittyMagMasterData');
+    const oldInventory = localStorage.getItem('gittyMagInventoryData');
+    const oldState = localStorage.getItem('gittyMagAppState');
+
+    if (!oldState && (oldMaster || oldInventory)) {
+        console.log('Old data found, migrating to new state structure...');
+        if (oldMaster) {
+            appState.additives.masterData = JSON.parse(oldMaster);
+        }
+        if (oldInventory) {
+            const { previousInventory, currentDetections } = JSON.parse(oldInventory);
+            appState.additives.previousInventory = previousInventory || {};
+            appState.additives.currentDetections = currentDetections || [];
+        }
+        
+        saveData(); // Save in new format
+        localStorage.removeItem('gittyMagMasterData');
+        localStorage.removeItem('gittyMagInventoryData');
+        localStorage.removeItem('gittyMagCelluloseCounts');
+        localStorage.removeItem('gittyMagMasterData_cellulose');
+        console.log('Old data migrated and removed.');
+    }
+};
+
+// --- RENDER FUNCTIONS ---
+
+const render = () => {
+    renderActiveView();
+    saveData();
+};
+
+const renderAppLayout = () => {
+    const isModeSelected = !!activeMode;
+
+    if (isModeSelected) {
+        // Hide selection screen, show app container
+        modeSelectionScreen.style.display = 'none';
+        appContainer.classList.remove('hidden');
+        appContainer.classList.add('lg:flex');
+
+        additivesNavItems.classList.toggle('hidden', activeMode !== 'additives');
+        celluloseNavItems.classList.toggle('hidden', activeMode !== 'cellulose');
+
+        const isCelluloseInventoryActive = appState.cellulose.inventoryInProgress;
+        navCelluloseEntry.classList.toggle('nav-item-disabled', !isCelluloseInventoryActive);
+        navCelluloseView.classList.toggle('nav-item-disabled', !isCelluloseInventoryActive);
+        navCelluloseCheck.classList.toggle('nav-item-disabled', !isCelluloseInventoryActive);
+        navCelluloseExport.classList.toggle('nav-item-disabled', !isCelluloseInventoryActive);
+
+        if (!activeView || (activeMode === 'additives' && activeView.startsWith('cellulose')) || (activeMode === 'cellulose' && !activeView.startsWith('cellulose')) || activeView === 'info') {
+             if (activeMode === 'additives') {
+                activeView = activeView === 'info' ? 'info' : 'start';
+             } else {
+                activeView = activeView === 'info' ? 'info' : 'cellulose-start';
+             }
+        }
+        
+        render();
+    } else {
+        // Show selection screen, hide app container
+        modeSelectionScreen.style.display = 'flex';
+        appContainer.classList.add('hidden');
+        appContainer.classList.remove('lg:flex');
+        
+        views.forEach(view => view.classList.remove('active'));
+    }
+};
+
+
+const renderActiveView = () => {
+    views.forEach(view => {
+        view.classList.toggle('active', view.id === `view-${activeView}`);
+    });
+
+    // Update active nav item
+    mainNav.querySelectorAll('.nav-item').forEach(item => {
+        const isActive = item.dataset.view === activeView;
+        let activeBgClass = activeMode === 'cellulose' ? 'bg-green-600' : 'bg-blue-600';
+        // Handle neutral 'info' button
+        if(activeView === 'info') activeBgClass = 'bg-gray-600';
+
+
+        item.classList.remove('bg-blue-600', 'text-white', 'bg-green-600', 'bg-gray-600');
+        
+        if (isActive) {
+            item.classList.add(activeBgClass, 'text-white');
+        }
+    });
+
+    switch (activeView) {
+        case 'start': renderStartView(); break;
+        case 'entry': renderEntryView(); break;
+        case 'view': renderViewDetectionsView(); break;
+        case 'check': renderCheckView(); break;
+        case 'export': renderExportView(); break;
+        case 'master': renderMasterDataView(); break;
+        case 'master-edit': renderMasterDataEditView(); break;
+        case 'cellulose-start': renderCelluloseStartView(); break;
+        case 'cellulose-entry': renderCelluloseEntryView(); break;
+        case 'cellulose-view': renderCelluloseViewDetectionsView(); break;
+        case 'cellulose-check': renderCelluloseCheckView(); break;
+        case 'cellulose-export': renderCelluloseExportView(); break;
+        case 'cellulose-master': renderCelluloseMasterView(); break;
+        case 'cellulose-master-edit': renderCelluloseMasterEditView(); break;
+        case 'info': /* Static view, no render function needed */ break;
+    }
+};
+
+function renderStartView() {
+    const hasInventory = Object.keys(appState.additives.previousInventory).length > 0 || appState.additives.currentDetections.length > 0;
+    let content = '';
+    if (hasInventory) {
+        content = `
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Inventario in Corso</h2>
+                <p class="text-gray-500 mb-6">Un inventario è già in memoria. Puoi continuare l'inserimento o cancellare i dati per ricominciare.</p>
+                <button id="start-clear-inventory" class="btn bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md font-semibold transition-colors">
+                    Cancella e Ricomincia
+                </button>
+            </div>
+        `;
+    } else {
+        content = `
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Inizia Inventario</h2>
+                <p class="text-gray-500 mb-6">Carica un file di giacenza per confrontare i dati, oppure inizia una nuova rilevazione da zero.</p>
+                <button id="start-with-sap" class="w-full justify-center px-4 py-3 mb-3 rounded-md font-semibold text-white transition-colors bg-blue-600 hover:bg-blue-700">
+                    Inizia con Giacenza SAP
+                </button>
+                <input type="file" id="start-file-input" accept=".xlsx, .csv" class="hidden" />
+                <button id="start-without-sap" class="text-sm text-blue-600 hover:underline">
+                    Oppure, inizia senza caricare giacenza
+                </button>
+                <div class="mt-8 border-t pt-6">
+                    <p class="text-gray-500 mb-4 text-sm">O importa da un link Google Fogli</p>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="url" id="start-google-sheet-url" placeholder="Incolla link Google Fogli..." class="flex-grow block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" />
+                        <button id="start-google-sheet-import" class="px-4 py-2 rounded-md font-semibold text-white bg-green-600 hover:bg-green-700 transition-colors">
+                            Importa
+                        </button>
+                    </div>
+                </div>
+                <span id="start-file-name" class="text-sm text-gray-500 mt-4 block"></span>
+            </div>
+        `;
+    }
+    startViewContent.innerHTML = content;
+    // Re-attach event listeners
+    if(hasInventory) {
+        document.getElementById('start-clear-inventory').addEventListener('click', handleClearInventory);
+    } else {
+        document.getElementById('start-with-sap').addEventListener('click', () => document.getElementById('start-file-input').click());
+        document.getElementById('start-file-input').addEventListener('change', handleStartFileChange);
+        document.getElementById('start-without-sap').addEventListener('click', handleStartWithoutSap);
+        document.getElementById('start-google-sheet-import').addEventListener('click', handleGoogleSheetImport);
+    }
+}
+
+function renderEntryView() {
+    const isFormDisabled = appState.additives.masterData.length === 0;
+    entryFormDisabledMessage.classList.toggle('hidden', !isFormDisabled);
+    entryFormFields.querySelectorAll('input, select, button').forEach(el => el.disabled = isFormDisabled);
+    
+    entryFormFields.classList.toggle('opacity-50', isFormDisabled);
+    entryFormFields.classList.toggle('cursor-not-allowed', isFormDisabled);
+    
+    renderRecentDetections();
+    updateEntrySummary();
+    updateUomOptions();
+    renderConversionFactors();
+}
+
+function renderMasterDataView() {
+    const filter = masterDataFilter.value.toLowerCase();
+    const filteredData = appState.additives.masterData.filter(item => {
+        return (item.code || '').toLowerCase().includes(filter) || (item.description || '').toLowerCase().includes(filter);
+    }).sort((a,b) => (a.code || '').localeCompare(b.code));
+
+    if (filteredData.length === 0) {
+        masterTbody.innerHTML = `<tr><td colspan="4" class="text-center py-10 text-gray-500">Nessun materiale trovato.</td></tr>`;
+        return;
+    }
+
+    masterTbody.innerHTML = filteredData.map(item => {
+        const factors = Object.entries(item)
+            .filter(([key]) => !['id', 'code', 'description'].includes(key) && key.toUpperCase() !== 'KG' && item[key])
+            .map(([key, value]) => `<span class="inline-block bg-gray-200 rounded-full px-2 py-1 text-xs font-semibold text-gray-700 mr-2 mb-1">${key.toUpperCase()}: ${value}</span>`)
+            .join('');
+
+        return `
+            <tr data-id="${item.id}">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${item.code}</td>
+                <td class="px-6 py-4 text-sm text-gray-800 wrap-text">${item.description}</td>
+                <td class="px-6 py-4 text-sm text-gray-500">${factors || 'N/A'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div class="flex justify-end items-center space-x-4">
+                        <button class="text-indigo-600 hover:text-indigo-900 master-edit-row">Modifica</button>
+                        <button class="text-red-600 hover:text-red-900 master-delete-row">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>    
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function renderMasterDataEditView() {
+    const isNew = editingMasterDataId === 'new';
+    const item = isNew ? {} : appState.additives.masterData.find(m => m.id === editingMasterDataId);
+
+    if (!item && !isNew) {
+        navigateTo('master');
+        return;
+    }
+
+    if (isNew) {
+        masterEditTitle.textContent = 'Aggiungi Articolo';
+        masterEditCode.innerHTML = `<input type="text" id="master-edit-new-code" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>`;
+        masterEditDescription.innerHTML = `<input type="text" id="master-edit-new-description" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>`;
+        masterEditFactorsContainer.innerHTML = '';
+    } else {
+        masterEditTitle.textContent = 'Modifica Articolo';
+        masterEditCode.innerHTML = `<p class="mt-1 text-gray-900 font-semibold">${item.code}</p>`;
+        masterEditDescription.innerHTML = `<p class="mt-1 text-gray-900">${item.description}</p>`;
+        
+        const factors = Object.entries(item)
+            .filter(([key]) => !['id', 'code', 'description'].includes(key) && key.toUpperCase() !== 'KG' && item[key]);
+            
+        masterEditFactorsContainer.innerHTML = factors.map(([uom, factor]) => `
+            <div class="flex items-center gap-4 p-2 border rounded-md">
+                <div class="flex-1">
+                    <label class="block text-xs font-medium text-gray-500">Unità</label>
+                    <p class="font-semibold">${uom.toUpperCase()}</p>
+                </div>
+                <div class="flex-1">
+                    <label class="block text-xs font-medium text-gray-500">Fattore</label>
+                    <p>${factor}</p>
+                </div>
+                <button type="button" data-uom="${uom}" class="master-edit-delete-factor-btn text-red-500 hover:text-red-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </button>
+            </div>
+        `).join('') || '<p class="text-sm text-gray-500">Nessun fattore di conversione aggiunto.</p>';
+    }
+    masterEditNewUom.value = '';
+    masterEditNewFactor.value = '';
+}
+
+function renderRecentDetections() {
+    const recent = [...appState.additives.currentDetections].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 5);
+    if (recent.length === 0) {
+        recentDetectionsContainer.innerHTML = `<p class="text-gray-500">Nessuna rilevazione ancora inserita.</p>`;
+        return;
+    }
+    const masterDataMap = new Map(appState.additives.masterData.map(m => [m.code, m]));
+    recentDetectionsContainer.innerHTML = `
+        <ul class="divide-y divide-gray-200">
+            ${recent.map(det => `
+                <li class="py-3 flex justify-between items-center">
+                    <span class="text-sm font-medium text-gray-800" style="flex-basis: 75%;">${masterDataMap.get(det.code)?.description || `Codice: ${det.code}`}</span>
+                    <span class="text-sm font-semibold text-gray-600">${det.quantity} ${det.uom}</span>
+                </li>
+            `).join('')}
+        </ul>
+    `;
+}
+
+function renderViewDetectionsView() {
+    const filter = viewDetectionsFilter.value.toLowerCase();
+    const masterDataMap = new Map(appState.additives.masterData.map(m => [m.code, m]));
+
+    const filteredDetections = appState.additives.currentDetections
+        .filter(det => {
+            if (!filter) return true;
+            const material = masterDataMap.get(det.code);
+            if (!material) return false;
+            return material.description.toLowerCase().includes(filter) || material.code.toLowerCase().includes(filter);
+        })
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+    if (filteredDetections.length === 0) {
+        viewDetectionsTbody.innerHTML = `<tr><td colspan="6" class="text-center py-10 text-gray-500">${filter ? 'Nessuna rilevazione trovata per il filtro applicato.' : 'Nessuna rilevazione inserita.'}</td></tr>`;
+    } else {
+        viewDetectionsTbody.innerHTML = filteredDetections.map(det => {
+            const material = masterDataMap.get(det.code);
+            const isEditing = editingDetectionTimestamp === det.timestamp;
+            const availableUoms = getAvailableUomsForCode(det.code);
+
+            return `
+                <tr data-timestamp="${det.timestamp}">
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900 wrap-text">${material?.description || `Codice: ${det.code}`}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${isEditing ? `<input type="number" class="w-24 p-1 border rounded-md border-gray-300 edit-quantity" value="${det.quantity}">` : det.quantity}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${isEditing ? `
+                            <select class="w-24 p-1 border rounded-md border-gray-300 edit-uom">
+                                ${availableUoms.map(u => `<option value="${u}" ${u === det.uom ? 'selected' : ''}>${u}</option>`).join('')}
+                            </select>
+                        ` : det.uom}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${getKgValue(det.code, det.quantity, det.uom).toFixed(2)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(det.timestamp).toLocaleTimeString('it-IT')}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        ${isEditing ? `
+                            <div class="flex justify-end items-center space-x-2">
+                                <button class="text-green-600 hover:text-green-900 font-bold save-detection-btn">Salva</button>
+                                <button class="text-gray-600 hover:text-gray-900 cancel-edit-btn">Annulla</button>
+                            </div>
+                        ` : `
+                            <div class="flex justify-end items-center space-x-2">
+                                <button class="text-indigo-600 hover:text-indigo-900 edit-detection-btn">Modifica</button>
+                                <button class="text-red-600 hover:text-red-900 delete-detection-btn">Elimina</button>
+                            </div>
+                        `}
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    if (filter) {
+        const detectedKg = filteredDetections.reduce((sum, det) => sum + getKgValue(det.code, det.quantity, det.uom), 0);
+        const uniqueCodesInFilter = [...new Set(filteredDetections.map(det => det.code))];
+        const sapKg = uniqueCodesInFilter.reduce((sum, code) => sum + (appState.additives.previousInventory[code] || 0), 0);
+        
+        viewDetectionsTotals.innerHTML = `
+            <div class="text-center p-2">
+                <p class="text-sm text-gray-500">Totale Rilevato (Filtrato)</p>
+                <p class="text-xl font-bold text-indigo-600">${detectedKg.toFixed(2)} KG</p>
+            </div>
+            ${Object.keys(appState.additives.previousInventory).length > 0 ? `
+                <div class="text-center p-2 mt-2 lg:mt-0 border-t lg:border-t-0 lg:border-l">
+                    <p class="text-sm text-gray-500">Giacenza SAP (Filtrato)</p>
+                    <p class="text-xl font-bold text-gray-700">${sapKg.toFixed(2)} KG</p>
+                </div>
+            ` : ''}
+        `;
+        viewDetectionsTotals.classList.remove('hidden');
+        viewDetectionsTotals.classList.add('flex');
+    } else {
+        viewDetectionsTotals.classList.add('hidden');
+        viewDetectionsTotals.classList.remove('flex');
+    }
+}
+
+function renderCheckView(subview = 'checkEntries') {
+     checkSubviewButtons.forEach(btn => {
+        const isActive = btn.dataset.subview === subview;
+        btn.classList.toggle('border-blue-600', isActive);
+        btn.classList.toggle('text-blue-600', isActive);
+        btn.classList.toggle('text-gray-500', !isActive);
+        btn.classList.toggle('hover:text-gray-700', !isActive);
+    });
+
+    if (subview === 'checkEntries') {
+        renderCheckEntriesSubview();
+    } else {
+        renderViewInventoryPreviewSubview();
+    }
+}
+
+function renderCheckEntriesSubview() {
+    const detectedCodes = new Set(appState.additives.currentDetections.map(d => d.code));
+    const zeroDetectionMaterials = appState.additives.masterData.filter(m => !detectedCodes.has(m.code));
+    
+    const detectedTotals = new Map();
+    appState.additives.currentDetections.forEach(det => {
+        const kgValue = getKgValue(det.code, det.quantity, det.uom);
+        detectedTotals.set(det.code, (detectedTotals.get(det.code) || 0) + kgValue);
+    });
+
+    const highDeltaMaterials = appState.additives.masterData.map(material => {
+        const detected = detectedTotals.get(material.code) || 0;
+        const sap = appState.additives.previousInventory[material.code] || 0;
+        if (sap === 0 && detected === 0) return null;
+        
+        const delta = detected - sap;
+        const deltaPercent = sap !== 0 ? Math.abs(delta / sap) : Infinity;
+
+        if (deltaPercent > 0.30) {
+            return { ...material, detected, sap, delta };
+        }
+        return null;
+    }).filter(Boolean).sort((a,b) => a.description.localeCompare(b.description));
+
+    let highDeltaSection = '';
+    if (Object.keys(appState.additives.previousInventory).length > 0) {
+        highDeltaSection = `
+            <div class="bg-white rounded-lg shadow-md p-6 lg:p-8">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Materiali con Delta Elevato (&gt; ±30%)</h3>
+                <div class="max-h-80 overflow-auto border rounded-lg pinch-zoom-container">
+                    ${highDeltaMaterials.length > 0 ? `
+                        <table class="divide-y divide-gray-200 w-full">
+                            <thead class="bg-gray-50 sticky top-0 z-10"><tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase no-wrap">Descrizione</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase no-wrap">Rilevato (KG)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase no-wrap">SAP (KG)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase no-wrap">Delta (KG)</th>
+                            </tr></thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                ${highDeltaMaterials.map(m => `
+                                    <tr class="cursor-pointer hover:bg-gray-50">
+                                        <td class="px-6 py-4 text-sm font-medium text-gray-900 wrap-text">${m.description}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${m.detected.toFixed(2)}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${m.sap.toFixed(2)}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold ${m.delta >= 0 ? 'text-green-600' : 'text-red-600'}">${m.delta.toFixed(2)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    ` : `<p class="p-6 text-center text-gray-500">Nessun materiale con delta superiore al 30%.</p>`}
+                </div>
+            </div>
+        `;
+    }
+
+    checkSubviewContent.innerHTML = `
+        <div class="space-y-8">
+            <div class="bg-white rounded-lg shadow-md p-6 lg:p-8">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Materiali non Rilevati</h3>
+                <div class="max-h-60 overflow-auto border rounded-lg pinch-zoom-container">
+                    ${zeroDetectionMaterials.length > 0 ? `
+                        <table class="divide-y divide-gray-200 w-full">
+                            <thead class="bg-gray-50 sticky top-0 z-10"><tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase no-wrap">Codice</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase wrap-text">Descrizione</th>
+                            </tr></thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                ${zeroDetectionMaterials.map(m => `
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${m.code}</td>
+                                        <td class="px-6 py-4 text-sm font-medium text-gray-900 wrap-text">${m.description}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    ` : `<p class="p-6 text-center text-gray-500">Tutti i materiali in anagrafica hanno almeno una rilevazione.</p>`}
+                </div>
+            </div>
+            ${highDeltaSection}
+        </div>
+    `;
+}
+
+function renderViewInventoryPreviewSubview() {
+    const hasSap = Object.keys(appState.additives.previousInventory).length > 0;
+    const detectedTotals = new Map();
+    appState.additives.currentDetections.forEach(det => {
+        const kgValue = getKgValue(det.code, det.quantity, det.uom);
+        detectedTotals.set(det.code, (detectedTotals.get(det.code) || 0) + kgValue);
+    });
+
+    const allCodes = new Set([
+        ...appState.additives.masterData.map(m => m.code),
+        ...(hasSap ? Object.keys(appState.additives.previousInventory) : []),
+        ...Array.from(detectedTotals.keys())
+    ]);
+
+    const masterDataMap = new Map(appState.additives.masterData.map(m => [m.code, m]));
+
+    const reportData = Array.from(allCodes).map(code => {
+        const material = masterDataMap.get(code);
+        if (!material) return null;
+        const detected = detectedTotals.get(code) || 0;
+        const sap = appState.additives.previousInventory[code] || 0;
+        let deltaPercent = 'N/A';
+        if (hasSap) {
+            if (sap !== 0) deltaPercent = (detected - sap) / sap;
+            else if (detected > 0) deltaPercent = Infinity;
+        }
+        return { ...material, detected, sap, deltaPercent };
+    }).filter(Boolean).sort((a,b) => a.description.localeCompare(b.description));
+
+    checkSubviewContent.innerHTML = `
+        <div class="bg-white rounded-lg shadow-md p-6 lg:p-8">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Anteprima Riepilogo Inventario</h3>
+            <div class="overflow-auto border rounded-lg pinch-zoom-container" style="max-height: 70vh;">
+                <table class="divide-y divide-gray-200 w-full">
+                    <thead class="bg-gray-50 sticky top-0 z-10">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase no-wrap">Descrizione</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase no-wrap">Rilevato (KG)</th>
+                            ${hasSap ? `
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase no-wrap">SAP (KG)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase no-wrap">Delta (%)</th>
+                            ` : ''}
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        ${reportData.map(item => `
+                            <tr>
+                                <td class="px-6 py-4 text-sm font-medium text-gray-900 wrap-text">${item.description}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-500">${item.detected.toFixed(2)}</td>
+                                ${hasSap ? `
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.sap.toFixed(2)}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold ${item.deltaPercent < 0 ? 'text-red-600' : 'text-green-600'}">
+                                        ${typeof item.deltaPercent === 'number' ? (item.deltaPercent * 100).toFixed(2) + '%' : 'N/A'}
+                                    </td>
+                                ` : ''}
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+function renderExportView() {
+    const hasSap = Object.keys(appState.additives.previousInventory).length > 0;
+    exportBtn.disabled = appState.additives.currentDetections.length === 0 && !hasSap;
+}
+
+function renderCelluloseStartView() {
+    const hasInventory = appState.cellulose.inventoryInProgress;
+    let content;
+    if (hasInventory) {
+        content = `
+            <h2 class="text-2xl font-bold text-gray-800">Inventario in Corso</h2>
+            <p class="text-gray-500 mb-6">Un inventario di cellulosa è già in memoria. Puoi continuare l'inserimento o cancellare i dati per ricominciare.</p>
+            <button id="cellulose-start-new-btn" class="w-full justify-center px-4 py-3 rounded-md font-semibold text-white transition-colors bg-red-600 hover:bg-red-700">
+                Cancella e Ricomincia
+            </button>
+        `;
+    } else {
+        content = `
+            <h2 class="text-2xl font-bold text-gray-800">Inizia Inventario</h2>
+            <p class="text-gray-500 mb-6">Inizia una nuova sessione di conteggio per la cellulosa.</p>
+            <button id="cellulose-start-new-btn" class="w-full justify-center px-4 py-3 rounded-md font-semibold text-white transition-colors bg-green-600 hover:bg-green-700">
+                Inizia Nuovo Inventario
+            </button>
+        `;
+    }
+    celluloseStartViewContent.innerHTML = content;
+    document.getElementById('cellulose-start-new-btn').addEventListener('click', handleCelluloseStartNew);
+}
+
+// Reusable function to render a cellulose table
+function renderCelluloseTable(tbodyElement, countsObject, isEditable, isPreviousInventory = false) {
+    if (appState.cellulose.masterData.length === 0) {
+        tbodyElement.innerHTML = `<tr><td colspan="3" class="text-center py-10 text-gray-500">Nessuna anagrafica caricata.<br><a href="#cellulose-master" data-view="cellulose-master" class="nav-item text-green-600 font-semibold hover:underline">Carica Anagrafica Cellulosa</a></td></tr>`;
+        return;
+    }
+
+    const groupSortOrder = { 1110: 1, 1100: 2, 1130: 3, 1150: 4, 1160: 5, 1170: 6 };
+    
+    const grouped = appState.cellulose.masterData.reduce((acc, item) => {
+        const groupName = item.nome_gruppo_origine || 'Senza Gruppo';
+        if (!acc[groupName]) {
+            acc[groupName] = { items: [], code: item.codice_gruppo_origine };
+        }
+        acc[groupName].items.push(item);
+        return acc;
+    }, {});
+
+    const sortedGroupNames = Object.keys(grouped).sort((a, b) => {
+        const orderA = groupSortOrder[grouped[a].code] || 99;
+        const orderB = groupSortOrder[grouped[b].code] || 99;
+        return orderA - orderB;
+    });
+
+    let html = '';
+    sortedGroupNames.forEach((groupName, index) => {
+        if (index > 0) {
+            html += `<tr><td colspan="3" class="py-2 bg-gray-100"></td></tr>`;
+        }
+        html += `<tr class="bg-gray-200"><td colspan="3" class="px-2 md:px-6 py-2 text-sm font-bold text-gray-700">${groupName}</td></tr>`;
+        
+        const sortedItems = grouped[groupName].items.sort((a, b) => a.sequenza_elenco_gruppo - b.sequenza_elenco_gruppo);
+        
+        sortedItems.forEach(item => {
+            const total = calculateCelluloseTotal(item, countsObject);
+            const totalUnit = item.PAC ? 'BAL' : 'KG';
+            
+            const uoms = item.PAC ? ['PAC', 'BAL'] : (item.CAMION ? ['CAMION'] : []);
+            const buttonsHtml = uoms.map(uom => {
+                const uomTotal = calculateCelluloseUOMTotal(item.id, uom, countsObject);
+                const hasValue = uomTotal > 0;
+                const buttonClasses = isEditable ? 'cellulose-entry-btn' : 'cursor-default';
+                const dataAttributes = isEditable ? `data-material-id="${item.id}" data-uom="${uom}" ${isPreviousInventory ? 'data-is-previous="true"' : ''}` : '';
+
+                return `
+                    <div class="text-center flex-1">
+                        <p class="text-xs text-gray-500 uppercase font-semibold">${uom}</p>
+                        <button ${dataAttributes} class="${buttonClasses} w-16 h-12 text-base rounded-md font-semibold transition-colors border-2 ${hasValue ? 'bg-green-100 border-green-500 text-green-800' : 'bg-white border-gray-300 border-dashed text-gray-400 hover:bg-gray-50'}">
+                            ${hasValue ? uomTotal : '...'}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+            
+            const totalId = `total-${isPreviousInventory ? 'prev-' : ''}${item.id}`;
+            html += `
+                <tr>
+                    <td class="px-2 md:px-6 py-3 text-sm text-gray-800 wrap-text">${formatCelluloseDescription(item.descrizione_materiale)}</td>
+                    <td class="px-2 md:px-6 py-3"><div class="flex justify-center items-start gap-2">${buttonsHtml}</div></td>
+                    <td class="px-2 md:px-6 py-3 text-sm font-bold text-gray-900 no-wrap"><span id="${totalId}">${total.toFixed(0)}</span> ${totalUnit}</td>
+                </tr>
+            `;
+        });
+    });
+
+    tbodyElement.innerHTML = html;
+}
+
+function renderCelluloseEntryView() {
+    if (!appState.cellulose.inventoryInProgress) {
+        celluloseEntryTbody.innerHTML = `<tr><td colspan="3" class="text-center py-10 text-gray-500">Nessun inventario in corso.<br><a href="#cellulose-start" data-view="cellulose-start" class="nav-item text-green-600 font-semibold hover:underline">Inizia un nuovo inventario</a></td></tr>`;
+        return;
+    }
+    renderCelluloseTable(celluloseEntryTbody, appState.cellulose.celluloseCounts, true, false);
+}
+
+function renderCelluloseViewDetectionsView() {
+    const filter = celluloseViewFilter.value.toLowerCase();
+    const masterDataMap = new Map(appState.cellulose.masterData.map(m => [m.id, m]));
+
+    let allDetections = [];
+    for (const materialId in appState.cellulose.celluloseCounts) {
+        const materialCounts = appState.cellulose.celluloseCounts[materialId];
+        for (const uom in materialCounts) {
+            const entries = materialCounts[uom];
+            entries.forEach(entry => {
+                allDetections.push({ materialId, quantity: entry.value, uom, timestamp: entry.timestamp });
+            });
+        }
+    }
+
+    const filteredDetections = allDetections.filter(det => {
+        const material = masterDataMap.get(det.materialId);
+        if (!material) return false;
+        if (!filter) return true;
+        return formatCelluloseDescription(material.descrizione_materiale).toLowerCase().includes(filter) || material.codice_materiale.toString().toLowerCase().includes(filter);
+    }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+    if (filteredDetections.length === 0) {
+        celluloseViewTbody.innerHTML = `<tr><td colspan="4" class="text-center py-10 text-gray-500">${filter ? 'Nessun conteggio trovato per il filtro applicato.' : 'Nessun conteggio inserito.'}</td></tr>`;
+    } else {
+        celluloseViewTbody.innerHTML = filteredDetections.map(det => {
+            const material = masterDataMap.get(det.materialId);
+            return `
+                <tr>
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900 wrap-text">${formatCelluloseDescription(material?.descrizione_materiale) || `ID: ${det.materialId}`}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${det.quantity}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${det.uom}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(det.timestamp).toLocaleTimeString('it-IT')}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+}
+
+function renderCelluloseCheckView() {
+    if (!appState.cellulose.inventoryInProgress) {
+        celluloseCheckContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><p class="text-center text-gray-500">Nessun inventario in corso.<br><a href="#cellulose-start" data-view="cellulose-start" class="nav-item text-green-600 font-semibold hover:underline">Inizia un nuovo inventario</a></p></div>`;
+        celluloseCheckTabs.forEach(tab => tab.classList.add('hidden'));
+        return;
+    }
+    celluloseCheckTabs.forEach(tab => tab.classList.remove('hidden'));
+
+    celluloseCheckTabs.forEach(tab => {
+        const isActive = tab.id.includes(celluloseCheckActiveTab);
+        tab.classList.toggle('border-green-500', isActive);
+        tab.classList.toggle('text-green-600', isActive);
+        tab.classList.toggle('border-transparent', !isActive);
+        tab.classList.toggle('text-gray-500', !isActive);
+    });
+
+    if (celluloseCheckActiveTab === 'not-counted') {
+        renderCelluloseCheckNotCountedSubview();
+    } else {
+        renderCelluloseCheckPreviousInventorySubview();
+    }
+}
+
+function renderCelluloseCheckNotCountedSubview() {
+    const groupSortOrder = { 1110: 1, 1100: 2, 1130: 3, 1150: 4, 1160: 5, 1170: 6 };
+    
+    const uncountedMaterials = appState.cellulose.masterData.filter(item => calculateCelluloseTotal(item, appState.cellulose.celluloseCounts) === 0);
+
+    if (uncountedMaterials.length === 0) {
+        celluloseCheckContent.innerHTML = `<div class="bg-white rounded-lg shadow p-6"><p class="text-center text-gray-500">Tutti i materiali sono stati conteggiati.</p></div>`;
+        return;
+    }
+    
+    const grouped = uncountedMaterials.reduce((acc, item) => {
+        const groupName = item.nome_gruppo_origine || 'Senza Gruppo';
+        if (!acc[groupName]) {
+            acc[groupName] = { items: [], code: item.codice_gruppo_origine };
+        }
+        acc[groupName].items.push(item);
+        return acc;
+    }, {});
+
+    const sortedGroupNames = Object.keys(grouped).sort((a, b) => {
+        const orderA = groupSortOrder[grouped[a].code] || 99;
+        const orderB = groupSortOrder[grouped[b].code] || 99;
+        return orderA - orderB;
+    });
+
+    let html = '<div class="bg-white rounded-lg shadow p-2 md:p-4 divide-y divide-gray-200">';
+    sortedGroupNames.forEach((groupName) => {
+        html += `<div class="py-2"><h4 class="px-2 md:px-4 py-2 text-sm font-bold text-gray-600 bg-gray-100 rounded">${groupName}</h4>`;
+        
+        const sortedItems = grouped[groupName].items.sort((a, b) => a.sequenza_elenco_gruppo - b.sequenza_elenco_gruppo);
+        
+        sortedItems.forEach(item => {
+            html += `<p class="px-2 md:px-4 py-2 text-sm text-gray-800">${formatCelluloseDescription(item.descrizione_materiale)}</p>`;
+        });
+        html += `</div>`;
+    });
+    html += '</div>';
+
+    celluloseCheckContent.innerHTML = html;
+}
+
+function renderCelluloseCheckPreviousInventorySubview() {
+    const hasPreviousData = Object.keys(appState.cellulose.previousInventory).length > 0;
+    
+    let html = `
+        <div class="bg-white rounded-lg shadow">
+            <div class="p-4 md:p-6 border-b flex flex-wrap items-center justify-between gap-4">
+                <h3 class="text-lg font-bold text-gray-800">Gestione Inventario Precedente</h3>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <button id="cellulose-previous-load-btn" class="btn-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-sm font-semibold">Carica File</button>
+                    <input type="file" id="cellulosePreviousInventoryFile" accept=".xlsx" class="hidden" />
+                    <button id="cellulose-previous-edit-toggle-btn" class="btn-sm ${cellulosePreviousInventoryEditMode ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-gray-600 hover:bg-gray-700'} text-white px-3 py-1.5 rounded-md text-sm font-semibold">
+                        ${cellulosePreviousInventoryEditMode ? 'Fine Modifica' : 'Modifica Manuale'}
+                    </button>
+                    ${hasPreviousData ? `
+                    <button id="cellulose-previous-export-btn" class="btn-sm bg-gray-600 hover:bg-gray-700 text-white px-3 py-1.5 rounded-md text-sm font-semibold">Esporta</button>
+                    <button id="cellulose-previous-delete-btn" class="btn-sm bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-md text-sm font-semibold">Elimina</button>
+                    ` : ''}
+                </div>
+            </div>
+            <div class="p-0 md:p-4">
+                <div class="overflow-x-auto border rounded-lg">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-2 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Materiale</th>
+                                <th scope="col" class="px-2 md:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Unità di Inserimento</th>
+                                <th scope="col" class="px-2 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Totale</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cellulose-check-previous-tbody" class="bg-white divide-y divide-gray-200">
+                            <!-- Rendered by renderCelluloseTable -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+
+    celluloseCheckContent.innerHTML = html;
+    
+    const tbody = document.getElementById('cellulose-check-previous-tbody');
+    renderCelluloseTable(tbody, appState.cellulose.previousInventory, cellulosePreviousInventoryEditMode, true);
+}
+
+function renderCelluloseExportView() {
+    const hasCurrentData = Object.keys(appState.cellulose.celluloseCounts).length > 0;
+    celluloseExportCurrentBtn.disabled = !hasCurrentData;
+    celluloseSetAsPreviousBtn.disabled = !hasCurrentData;
+}
+
+function renderCelluloseMasterView() {
+    const filter = celluloseMasterDataFilter.value.toLowerCase();
+    const filteredData = appState.cellulose.masterData.filter(item => {
+        return (item.codice_materiale || '').toString().toLowerCase().includes(filter) || 
+               (item.descrizione_materiale || '').toLowerCase().includes(filter) ||
+               (item.nome_gruppo_origine || '').toLowerCase().includes(filter);
+    }).sort((a,b) => a.sequenza_elenco_gruppo - b.sequenza_elenco_gruppo || (a.descrizione_materiale || '').localeCompare(b.descrizione_materiale));
+
+    if (filteredData.length === 0) {
+        celluloseMasterTbody.innerHTML = `<tr><td colspan="5" class="text-center py-10 text-gray-500">Nessun materiale trovato. Carica o aggiungi un'anagrafica per iniziare.</td></tr>`;
+        return;
+    }
+
+    celluloseMasterTbody.innerHTML = filteredData.map(item => {
+        const uom = item.PAC ? `PAC (${item.PAC} BAL)` : (item.CAMION ? `CAMION (${item.CAMION} KG)` : 'N/D');
+        return `
+            <tr data-id="${item.id}">
+                <td class="px-2 md:px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900">${item.codice_materiale}</td>
+                <td class="px-2 md:px-6 py-3 text-sm text-gray-800 wrap-text">${formatCelluloseDescription(item.descrizione_materiale)}</td>
+                <td class="px-2 md:px-6 py-3 text-sm text-gray-500 wrap-text">${item.nome_gruppo_origine}</td>
+                <td class="px-2 md:px-6 py-3 whitespace-nowrap text-sm text-gray-500">${uom}</td>
+                <td class="px-2 md:px-6 py-3 whitespace-nowrap text-right text-sm font-medium">
+                    <div class="flex justify-end items-center space-x-4">
+                        <button class="text-indigo-600 hover:text-indigo-900 cellulose-master-edit-row">Modifica</button>
+                        <button class="text-red-600 hover:text-red-900 cellulose-master-delete-row">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>    
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function renderCelluloseMasterEditView() {
+    const isNew = editingCelluloseMasterId === 'new';
+    const item = isNew ? {} : appState.cellulose.masterData.find(m => m.id === editingCelluloseMasterId);
+
+    if (!item && !isNew) {
+        navigateTo('cellulose-master');
+        return;
+    }
+
+    celluloseMasterEditTitle.textContent = isNew ? 'Aggiungi Articolo Cellulosa' : 'Modifica Articolo Cellulosa';
+    celluloseEditCode.value = item.codice_materiale || '';
+    celluloseEditCode.readOnly = !isNew;
+    celluloseEditSeq.value = item.sequenza_elenco_gruppo || '';
+    celluloseEditDescription.value = item.descrizione_materiale || '';
+    celluloseEditGroup.value = item.nome_gruppo_origine || '';
+    celluloseEditPac.value = item.PAC || '';
+    celluloseEditCamion.value = item.CAMION || '';
+}
+
+function updateEntrySummary() {
+    const previousStock = selectedMaterial ? appState.additives.previousInventory[selectedMaterial.code] || 0 : 0;
+    const detectedToday = selectedMaterial ? appState.additives.currentDetections
+        .filter(d => d.code === selectedMaterial.code)
+        .reduce((sum, d) => sum + getKgValue(d.code, d.quantity, d.uom), 0) : 0;
+    
+    entrySapStockSpan.textContent = `${previousStock.toFixed(2)} KG`;
+    entryDetectedTodaySpan.textContent = `${detectedToday.toFixed(2)} KG`;
+}
+
+function updateUomOptions() {
+    const uoms = getAvailableUomsForCode(selectedMaterial?.code);
+    uomSelect.innerHTML = uoms.map(u => `<option value="${u}">${u}</option>`).join('');
+    if (uoms.length > 0) {
+        uomSelect.value = uoms[0];
+    }
+}
+
+function renderConversionFactors() {
+    if (!selectedMaterial) {
+        conversionFactorsCard.classList.add('hidden');
+        return;
+    }
+    
+    const factors = Object.entries(selectedMaterial)
+        .filter(([key, value]) => !['id', 'code', 'description', 'KG'].includes(key) && value)
+        .map(([key, value]) => ({ unit: key.toUpperCase(), factor: value }));
+
+    if (factors.length === 0) {
+        conversionFactorsCard.classList.add('hidden');
+        return;
+    }
+
+    conversionMaterialName.textContent = selectedMaterial.description;
+    conversionFactorsGrid.innerHTML = factors.map(({unit, factor}) => `
+        <div class="bg-gray-100 p-2 rounded-md text-center">
+            <p class="text-sm font-bold text-gray-800">${unit}</p>
+            <p class="text-xs text-gray-600">1 ${unit} = ${factor} KG</p>
+        </div>
+    `).join('');
+    conversionFactorsCard.classList.remove('hidden');
+}
+
+// --- CORE LOGIC & EVENT HANDLERS ---
+
+function navigateTo(viewId) {
+    const celluloseInventoryViews = ['cellulose-entry', 'cellulose-view', 'cellulose-check', 'cellulose-export'];
+    if (celluloseInventoryViews.includes(viewId) && !appState.cellulose.inventoryInProgress) {
+        activeView = 'cellulose-start';
+        // Reset check view state if navigating away because inventory ended
+        celluloseCheckActiveTab = 'not-counted';
+        cellulosePreviousInventoryEditMode = false;
+    } else {
+        activeView = viewId;
+    }
+    
+    if (window.innerWidth < 1024) {
+        closeSidebar();
+    }
+    editingDetectionTimestamp = null; 
+    if (viewId !== 'master-edit') {
+        editingMasterDataId = null;
+    }
+    if (viewId !== 'cellulose-master-edit') {
+        editingCelluloseMasterId = null;
+    }
+    render();
+}
+
+function toggleSidebar() {
+    isSidebarOpen ? closeSidebar() : openSidebar();
+}
+function openSidebar() {
+    isSidebarOpen = true;
+    sidebar.classList.remove('-translate-x-full');
+    sidebarOverlay.classList.remove('hidden');
+}
+function closeSidebar() {
+    isSidebarOpen = false;
+    sidebar.classList.add('-translate-x-full');
+    sidebarOverlay.classList.add('hidden');
+}
+
+function showModal(message, onConfirm) {
+    modalMessage.textContent = message;
+    modalConfirmCallback = onConfirm;
+    confirmationModal.classList.remove('hidden');
+    confirmationModal.classList.add('flex');
+}
+function hideModal() {
+    modalConfirmCallback = null;
+    confirmationModal.classList.add('hidden');
+    confirmationModal.classList.remove('flex');
+}
+
+function showAlert(message) {
+    alertMessage.textContent = message;
+    alertModal.classList.remove('hidden');
+    alertModal.classList.add('flex');
+}
+function hideAlert() {
+    alertModal.classList.add('hidden');
+    alertModal.classList.remove('flex');
+}
+
+
+function handleConfirmModal() {
+    if (modalConfirmCallback) {
+        modalConfirmCallback();
+    }
+    hideModal();
+}
+
+function processInventoryFile(rowsAsArray) {
+    const newInventory = {};
+    for (let i = 1; i < rowsAsArray.length; i++) {
+        const row = rowsAsArray[i];
+        if (row.length < 3) continue;
+        const code = row[0];
+        const quantity = parseFloat(String(row[2] || '0').replace(',', '.'));
+
+        if (code && (typeof code === 'string' || typeof code === 'number') && String(code).trim() !== '' && !isNaN(quantity)) {
+            const trimmedCode = String(code).trim();
+            newInventory[trimmedCode] = (newInventory[trimmedCode] || 0) + quantity;
+        }
+    }
+    appState.additives.previousInventory = newInventory;
+    navigateTo('entry');
+};
+
+function handleStartFileChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const fileNameSpan = document.getElementById('start-file-name');
+    fileNameSpan.textContent = `Caricamento: ${file.name}`;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            const data = event.target?.result;
+            const workbook = XLSX.read(data, { type: file.type.includes('csv') ? 'string' : 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            const rowsAsArray = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            processInventoryFile(rowsAsArray);
+        } catch (error) {
+            console.error("Error reading inventory file.", error);
+        } finally {
+            fileNameSpan.textContent = `Caricato: ${file.name}`;
+        }
+    };
+    
+    if (file.type.includes('csv')) {
+        reader.readAsText(file);
+    } else {
+        reader.readAsArrayBuffer(file);
+    }
+}
+
+async function handleGoogleSheetImport() {
+    const urlInput = document.getElementById('start-google-sheet-url');
+    const googleSheetUrl = urlInput.value;
+    const fileNameSpan = document.getElementById('start-file-name');
+    if (!googleSheetUrl) return;
+    
+    const regex = /spreadsheets\/d\/([a-zA-Z0-9-_]+)/;
+    const match = googleSheetUrl.match(regex);
+    if (!match) return;
+    
+    const sheetId = match[1];
+    const exportUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
+    
+    fileNameSpan.textContent = `Caricamento da Google Sheets...`;
+    try {
+        const response = await fetch(exportUrl);
+        if (!response.ok) throw new Error(`Errore di rete: ${response.statusText}`);
+        const csvText = await response.text();
+        const workbook = XLSX.read(csvText, { type: 'string' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const rowsAsArray = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        processInventoryFile(rowsAsArray);
+    } catch (error) {
+        console.error("Error importing from Google Sheets.", error);
+        fileNameSpan.textContent = '';
+    }
+}
+
+function handleClearInventory() {
+    showModal('Sei sicuro di voler cancellare la giacenza SAP e tutte le rilevazioni correnti? L\'operazione è irreversibile.', () => {
+        appState.additives.previousInventory = {};
+        appState.additives.currentDetections = [];
+        render();
+    });
+}
+
+function handleStartWithoutSap() {
+    appState.additives.previousInventory = {};
+    navigateTo('entry');
+}
+
+function handleAddDetection() {
+    const qty = parseFloat(quantityInput.value);
+    const uom = uomSelect.value;
+    if (!selectedMaterial || isNaN(qty) || qty <= 0) return;
+    
+    const newDetection = {
+        code: selectedMaterial.code,
+        quantity: qty,
+        uom,
+        timestamp: new Date().toISOString()
+    };
+    appState.additives.currentDetections.push(newDetection);
+    
+    // Reset form
+    materialDescriptionInput.value = '';
+    quantityInput.value = '';
+    selectedMaterial = null;
+    clearDescriptionBtn.classList.add('hidden');
+    
+    renderEntryView();
+    saveData();
+}
+
+function selectMaterial(material) {
+    selectedMaterial = material;
+    materialDescriptionInput.value = material.description;
+    
+    updateEntrySummary();
+    updateUomOptions();
+    renderConversionFactors();
+
+    autocompleteResults.classList.add('hidden');
+    autocompleteVisible = false;
+    clearDescriptionBtn.classList.remove('hidden');
+}
+
+function handleDescriptionInput(e) {
+    const value = e.target.value;
+    clearDescriptionBtn.classList.toggle('hidden', !value);
+
+    if (selectedMaterial && selectedMaterial.description !== value) {
+        selectedMaterial = null;
+        updateEntrySummary();
+        updateUomOptions();
+        renderConversionFactors();
+    }
+    
+    const valueLower = value.toLowerCase();
+    let suggestions = [];
+
+    if (valueLower) {
+        // Filter mode
+        suggestions = appState.additives.masterData
+            .filter(m => m.description.toLowerCase().includes(valueLower) || m.code.toLowerCase().includes(valueLower))
+            .sort((a, b) => a.description.localeCompare(b.description));
+    } else if (e.type === 'focus' || e.type === 'click') {
+        // Smart list mode (empty input)
+        const recentCodes = [...new Set(appState.additives.currentDetections.map(d => d.code).reverse())].slice(0, 5);
+        const recentMaterials = recentCodes
+            .map(code => appState.additives.masterData.find(m => m.code === code))
+            .filter(Boolean);
+        const otherMaterials = appState.additives.masterData
+            .filter(m => !recentCodes.includes(m.code))
+            .sort((a, b) => a.description.localeCompare(b.description));
+        suggestions = [...recentMaterials, ...otherMaterials];
+    }
+
+    if (suggestions.length > 0 && autocompleteVisible) {
+        const recentCodes = [...new Set(appState.additives.currentDetections.map(d => d.code).reverse())].slice(0, 5);
+        const recentMaterials = recentCodes.map(code => appState.additives.masterData.find(m => m.code === code)).filter(Boolean);
+        const recentCount = recentMaterials.length;
+        
+        autocompleteResults.innerHTML = suggestions.map((m, index) => {
+            let itemHtml = `<div class="p-2 hover:bg-gray-100 cursor-pointer" data-description="${m.description}">${m.description}</div>`;
+            if (!valueLower && recentCount > 0 && index === recentCount - 1 && suggestions.length > recentCount) {
+                itemHtml += `<hr class="my-1 border-gray-200">`;
+            }
+            return itemHtml;
+        }).join('');
+        autocompleteResults.classList.remove('hidden');
+        autocompleteResults.scrollTop = 0;
+    } else {
+        autocompleteResults.classList.add('hidden');
+    }
+}
+
+function getAvailableUomsForCode(code) {
+    const material = appState.additives.masterData.find(m => m.code === code);
+    if (!material) return ['KG'];
+
+    const getUomPriority = (uomKey) => {
+        const upperUom = uomKey.toUpperCase();
+        if (['IBC', 'SAC', 'FUS'].includes(upperUom)) return 1;
+        if (upperUom === 'SIL') return 2;
+        if (upperUom === 'PL') return 3;
+        if (upperUom === 'KG') return 5;
+        return 4;
+    };
+
+    const allUoms = new Set(['KG']);
+    Object.keys(material).forEach(key => {
+        if (!['id', 'code', 'description'].includes(key) && material[key]) {
+            allUoms.add(key.toUpperCase());
+        }
+    });
+
+    return Array.from(allUoms).sort((a, b) => {
+        const priorityA = getUomPriority(a);
+        const priorityB = getUomPriority(b);
+        return priorityA !== priorityB ? priorityA - priorityB : a.localeCompare(b);
+    });
+}
+
+function handleMasterDataFileChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            const data = event.target?.result;
+            const workbook = XLSX.read(data, { type: file.name.endsWith('.csv') ? 'string' : 'array' });
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+            if (jsonData.length === 0) return;
+            
+            const newMasterData = jsonData.map((row, index) => {
+                const newItem = { id: `${Date.now()}${index}` };
+                let code, description;
+                const remainingKeys = {};
+
+                for (const key in row) {
+                    const lowerKey = key.trim().toLowerCase();
+                    if (['code', 'codice'].includes(lowerKey)) {
+                        code = row[key];
+                    } else if (['description', 'descrizione'].includes(lowerKey)) {
+                        description = row[key];
+                    } else {
+                        remainingKeys[key.trim()] = row[key];
+                    }
+                }
+
+                if (code && description) {
+                    newItem.code = String(code).trim();
+                    newItem.description = String(description).trim();
+                    Object.assign(newItem, remainingKeys);
+                    return newItem;
+                }
+                return null;
+            }).filter(Boolean);
+            
+            appState.additives.masterData = newMasterData;
+            renderMasterDataView();
+            saveData();
+
+        } catch (error) {
+            console.error("Error reading master data file.", error);
+        } finally {
+            e.target.value = ''; // Reset file input
+        }
+    };
+
+    if (file.name.endsWith('.csv')) {
+        reader.readAsText(file);
+    } else {
+        reader.readAsArrayBuffer(file);
+    }
+}
+
+function handleMasterEditSave(e) {
+    e.preventDefault();
+    const isNew = editingMasterDataId === 'new';
+    let item;
+
+    if (isNew) {
+        const codeInput = document.getElementById('master-edit-new-code');
+        const descriptionInput = document.getElementById('master-edit-new-description');
+        const code = codeInput.value.trim();
+        const description = descriptionInput.value.trim();
+
+        if (!code || !description) {
+            showAlert('Codice e Descrizione sono obbligatori.');
+            return;
+        }
+        if (appState.additives.masterData.some(m => m.code === code)) {
+            showAlert('Un materiale con questo codice esiste già.');
+            return;
+        }
+        
+        item = { id: `${Date.now()}`, code, description };
+        appState.additives.masterData.push(item);
+    } else {
+        item = appState.additives.masterData.find(m => m.id === editingMasterDataId);
+    }
+
+    if (!item) return;
+
+    saveData();
+    navigateTo('master');
+}
+
+function handleMasterAddFactor() {
+    const uom = masterEditNewUom.value.trim().toUpperCase();
+    const factor = parseFloat(masterEditNewFactor.value);
+
+    if (!uom || isNaN(factor) || factor <= 0) {
+        showAlert('Per favore, inserisci un nome per l\'unità e un fattore di conversione valido.');
+        return;
+    }
+    
+    if (['ID', 'CODE', 'DESCRIPTION', 'KG'].includes(uom)) {
+        showAlert('Questo nome per l\'unità non è valido.');
+        return;
+    }
+
+    const isNew = editingMasterDataId === 'new';
+    if (isNew) {
+       showAlert('Salva prima il nuovo articolo, poi potrai modificare i fattori di conversione.');
+       return;
+    }
+
+    const item = appState.additives.masterData.find(m => m.id === editingMasterDataId);
+    if (item) {
+        item[uom] = factor;
+        renderMasterDataEditView();
+        saveData();
+    }
+}
+
+function generateExcelExport() {
+    if (appState.additives.masterData.length === 0) return;
+
+    const hasSap = Object.keys(appState.additives.previousInventory).length > 0;
+    const detectedTotals = new Map();
+    appState.additives.currentDetections.forEach(det => {
+        const kgValue = getKgValue(det.code, det.quantity, det.uom);
+        detectedTotals.set(det.code, (detectedTotals.get(det.code) || 0) + kgValue);
+    });
+
+    const allCodes = new Set([...appState.additives.masterData.map(m => m.code), ...(hasSap ? Object.keys(appState.additives.previousInventory) : []), ...Array.from(detectedTotals.keys())]);
+    const masterDataMap = new Map(appState.additives.masterData.map(m => [m.code, m]));
+
+    let reportData = Array.from(allCodes).map(code => {
+        const material = masterDataMap.get(code);
+        if (!material) return null;
+        const detected = detectedTotals.get(code) || 0;
+        const sap = appState.additives.previousInventory[code] || 0;
+        let deltaPercent = 'N/A', tolerance = '', highDelta = '';
+        if (hasSap) {
+            const deviation = sap !== 0 ? (detected - sap) / sap : (detected > 0 ? Infinity : 0);
+            deltaPercent = (sap !== 0 || detected > 0) ? deviation : 0;
+            if (Math.abs(deviation) <= 0.03) tolerance = 'X';
+            if (Math.abs(deviation) >= 0.30) highDelta = 'X';
+        }
+        return { code: material.code, description: material.description, sap, detected, deltaPercent, tolerance, highDelta };
+    }).filter(Boolean).sort((a,b) => a.description.localeCompare(b.description));
+
+    const headers = ["Codice Materiale", "Descrizione Materiale", "Giacenza Rilevata (KG)"];
+    if (hasSap) headers.push("Giacenza SAP (KG)", "Delta (%)", "In Tolleranza (±3%)", "Delta Elevato (±30%)");
+    
+    const dataForSheet = reportData.map(item => hasSap ? [item.code, item.description, item.detected, item.sap, item.deltaPercent, item.tolerance, item.highDelta] : [item.code, item.description, item.detected]);
+    
+    const summaryWorksheet = XLSX.utils.aoa_to_sheet([headers, ...dataForSheet]);
+    
+    for (let i = 1; i <= dataForSheet.length; i++) {
+        const rowNum = i + 1;
+        if(summaryWorksheet[`A${rowNum}`]) summaryWorksheet[`A${rowNum}`].t = 's';
+        if (hasSap && summaryWorksheet[`E${rowNum}`] && typeof summaryWorksheet[`E${rowNum}`].v === 'number') {
+            summaryWorksheet[`E${rowNum}`].z = '0.00%';
+        }
+    }
+    
+    const detailArray = appState.additives.currentDetections.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).map(det => ({
+        'Codice Materiale': det.code,
+        'Descrizione Materiale': masterDataMap.get(det.code)?.description || 'N/A',
+        'Quantità Rilevata': det.quantity,
+        'Unità di Misura': det.uom,
+        'Valore Convertito (KG)': getKgValue(det.code, det.quantity, det.uom),
+        'Ora di Registrazione': new Date(det.timestamp).toLocaleString('it-IT', { timeZone: 'Europe/Rome' })
+    }));
+
+    const detailWorksheet = XLSX.utils.json_to_sheet(detailArray);
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, summaryWorksheet, "Riepilogo");
+    if (detailArray.length > 0) XLSX.utils.book_append_sheet(workbook, detailWorksheet, "Dettaglio Rilevazioni");
+
+    const now = new Date();
+    const options = { timeZone: 'Europe/Rome', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false };
+    const formatter = new Intl.DateTimeFormat('sv-SE', options);
+    const formattedDate = formatter.format(now).replace(' ', '_').replace(':', '-');
+    const fileName = `Inventario_Additivi_${formattedDate}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+}
+
+function generateMasterDataExport() {
+    if (appState.additives.masterData.length === 0) {
+        showAlert("Nessuna anagrafica da esportare.");
+        return;
+    }
+    const dataToExport = appState.additives.masterData.map(item => {
+        const { id, ...rest } = item;
+        return rest;
+    });
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Anagrafica Materiali");
+    XLSX.writeFile(workbook, "Anagrafica_Materiali.xlsx");
+}
+
+function handleCelluloseMasterFileChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            const data = event.target?.result;
+            const workbook = XLSX.read(data, { type: file.name.endsWith('.csv') ? 'string' : 'array' });
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+                header: [
+                    'codice_materiale', 'codice_gruppo_origine', 'nome_gruppo_origine',
+                    'sequenza_elenco_gruppo', 'descrizione_materiale', 'totale_pacchi_completo',
+                    'PAC', 'CAMION'
+                ],
+                range: 1 // Skip header row
+            });
+
+            if (jsonData.length === 0) return;
+
+            const newMasterData = jsonData.map((row, index) => {
+                if (!row.codice_materiale || !row.descrizione_materiale) {
+                    console.warn(`Skipping row ${index + 2}: missing code or description.`);
+                    return null;
+                }
+                return { ...row, id: `${Date.now()}${index}` };
+            }).filter(Boolean);
+            
+            appState.cellulose.masterData = newMasterData;
+            renderCelluloseMasterView();
+            saveData();
+
+        } catch (error) {
+            console.error("Error reading cellulose master data file.", error);
+            showAlert("Errore durante la lettura del file. Assicurati che sia nel formato corretto.");
+        } finally {
+            e.target.value = ''; // Reset file input
+        }
+    };
+
+    if (file.name.endsWith('.csv')) {
+        reader.readAsText(file);
+    } else {
+        reader.readAsArrayBuffer(file);
+    }
+}
+
+function generateCelluloseMasterExport() {
+    if (appState.cellulose.masterData.length === 0) {
+        showAlert("Nessuna anagrafica da esportare.");
+        return;
+    }
+    const headers = [
+        'codice_materiale', 'codice_gruppo_origine', 'nome_gruppo_origine',
+        'sequenza_elenco_gruppo', 'descrizione_materiale', 'totale_pacchi_completo',
+        'PAC', 'CAMION'
+    ];
+    const dataToExport = appState.cellulose.masterData.map(item => {
+        const { id, ...rest } = item;
+        return rest;
+    });
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport, { header: headers });
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Anagrafica Cellulosa");
+    XLSX.writeFile(workbook, "Anagrafica_Cellulosa.xlsx");
+}
+
+function handleCelluloseMasterEditSave(e) {
+    e.preventDefault();
+    const code = celluloseEditCode.value.trim();
+    const description = celluloseEditDescription.value.trim();
+    
+    if (!code || !description) {
+        showAlert('Codice Materiale e Descrizione sono obbligatori.');
+        return;
+    }
+
+    const isNew = editingCelluloseMasterId === 'new';
+    if (isNew && appState.cellulose.masterData.some(m => m.codice_materiale == code)) {
+        showAlert('Un materiale con questo codice esiste già.');
+        return;
+    }
+
+    const itemInDb = isNew ? {} : appState.cellulose.masterData.find(m => m.id === editingCelluloseMasterId);
+
+    const updatedItem = {
+        codice_materiale: code,
+        descrizione_materiale: description,
+        sequenza_elenco_gruppo: celluloseEditSeq.value ? Number(celluloseEditSeq.value) : '',
+        nome_gruppo_origine: celluloseEditGroup.value.trim(),
+        PAC: celluloseEditPac.value ? Number(celluloseEditPac.value) : '',
+        CAMION: celluloseEditCamion.value ? Number(celluloseEditCamion.value) : '',
+        codice_gruppo_origine: itemInDb?.codice_gruppo_origine || '',
+        totale_pacchi_completo: itemInDb?.totale_pacchi_completo || ''
+    };
+
+    if (isNew) {
+        updatedItem.id = `${Date.now()}`;
+        appState.cellulose.masterData.push(updatedItem);
+    } else {
+        const index = appState.cellulose.masterData.findIndex(m => m.id === editingCelluloseMasterId);
+        if (index > -1) {
+            appState.cellulose.masterData[index] = { ...appState.cellulose.masterData[index], ...updatedItem };
+        }
+    }
+    
+    saveData();
+    navigateTo('cellulose-master');
+}
+
+// --- CELLULOSE ENTRY LOGIC ---
+
+function handleCelluloseStartNew() {
+    const hasInventory = appState.cellulose.inventoryInProgress;
+    const startAction = () => {
+        appState.cellulose.inventoryInProgress = true;
+        appState.cellulose.celluloseCounts = {}; // Clear old inventory
+        renderAppLayout(); // Update nav items state
+        navigateTo('cellulose-entry');
+    };
+
+    if (hasInventory) {
+        showModal('Iniziando un nuovo inventario, i dati del conteggio precedente verranno cancellati. Sei sicuro di voler continuare?', startAction);
+    } else {
+        startAction();
+    }
+}
+
+function calculateCelluloseTotal(material, countsObject = appState.cellulose.celluloseCounts) {
+    if (!material) return 0;
+    const counts = countsObject[material.id] || {};
+    let total = 0;
+
+    if (material.PAC) { // Gestione PAC/BAL -> totale in BAL
+        const pacCounts = (counts['PAC'] || []).reduce((sum, entry) => sum + entry.value, 0);
+        const balCounts = (counts['BAL'] || []).reduce((sum, entry) => sum + entry.value, 0);
+        total = (pacCounts * Number(material.PAC)) + balCounts;
+    } else if (material.CAMION) { // Gestione CAMION/KG -> totale in KG
+        const camionCounts = (counts['CAMION'] || []).reduce((sum, entry) => sum + entry.value, 0);
+        total = camionCounts * Number(material.CAMION || 0);
+    }
+    return total;
+}
+
+function calculateCelluloseUOMTotal(materialId, uom, countsObject = appState.cellulose.celluloseCounts) {
+    const counts = countsObject[materialId]?.[uom] || [];
+    return counts.reduce((sum, entry) => sum + entry.value, 0);
+}
+
+function updateCelluloseTotalOnScreen(materialId, isPrevious) {
+    // This function is now responsible just for re-rendering the right view
+    // which in turn will update all totals on screen.
+    if (isPrevious) {
+        if (activeView === 'cellulose-check' && celluloseCheckActiveTab === 'previous-inventory') {
+            renderCelluloseCheckPreviousInventorySubview();
+        }
+    } else {
+        if (activeView === 'cellulose-entry') {
+            renderCelluloseEntryView();
+        }
+    }
+}
+
+function openCelluloseEntryModal(materialId, uom, isPrevious = false) {
+    const material = appState.cellulose.masterData.find(m => m.id === materialId);
+    if (!material) return;
+    
+    activeCelluloseEntry = { material, uom, editMode: false, isPrevious };
+    
+    celluloseModalTitle.textContent = `${formatCelluloseDescription(material.descrizione_materiale)} - (${uom})`;
+    
+    // HIDE OR SHOW THE "VIEW PREVIOUS" BUTTON
+    celluloseModalShowPreviousBtn.style.display = isPrevious ? 'none' : 'block';
+    
+    celluloseEntryModal.classList.remove('hidden');
+    celluloseEntryModal.classList.add('flex');
+    renderCelluloseModalContent();
+}
+
+function closeCelluloseEntryModal() {
+    activeCelluloseEntry = { material: null, uom: null, editMode: false, isPrevious: false };
+    celluloseEntryModal.classList.add('hidden');
+    celluloseEntryModal.classList.remove('flex');
+}
+
+function renderCelluloseModalContent() {
+    const { material, uom, editMode, isPrevious } = activeCelluloseEntry;
+    if (!material) return;
+
+    const countsObject = isPrevious ? appState.cellulose.previousInventory : appState.cellulose.celluloseCounts;
+    const entries = (countsObject[material.id]?.[uom] || []).slice().reverse(); // Show newest first
+    let html = `
+        <div class="flex items-center gap-2 mb-2 new-entry-row">
+            <input type="number" placeholder="Nuovo valore..." class="cellulose-modal-new-input flex-grow w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm">
+        </div>
+    `;
+
+    if (entries.length > 0) {
+        html += '<hr class="my-3">';
+        html += entries.map((entry, index) => {
+            const displayTime = new Date(entry.timestamp).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+            return `
+                <div class="flex items-center gap-2 p-2 rounded-md hover:bg-gray-50 entry-row" data-timestamp="${entry.timestamp}">
+                    ${editMode ? 
+                        `<input type="number" value="${entry.value}" class="cellulose-modal-edit-input flex-grow w-full rounded-md border-gray-300 shadow-sm sm:text-sm" data-original-index="${index}">` :
+                        `<span class="flex-grow font-semibold text-gray-800">${entry.value}</span>`
+                    }
+                    <span class="text-xs text-gray-500">${displayTime}</span>
+                    <button class="text-red-500 hover:text-red-700 cellulose-modal-delete-row">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                    </button>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    celluloseModalEntriesList.innerHTML = html;
+    
+    // Update button text and style based on editMode
+    if (editMode) {
+        celluloseModalEditBtn.textContent = 'SALVA MODIFICHE';
+        celluloseModalEditBtn.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+        celluloseModalEditBtn.classList.add('bg-green-600', 'text-white', 'hover:bg-green-700');
+        celluloseModalInsertBtn.disabled = true;
+        celluloseModalInsertBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    } else {
+        celluloseModalEditBtn.textContent = 'MODIFICA';
+        celluloseModalEditBtn.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+        celluloseModalEditBtn.classList.remove('bg-green-600', 'text-white', 'hover:bg-green-700');
+        celluloseModalInsertBtn.disabled = false;
+        celluloseModalInsertBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+    
+    celluloseModalEntriesList.querySelector('.cellulose-modal-new-input')?.focus();
+}
+
+// --- SERVICE WORKER REGISTRATION ---
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js') // Corrected path
+                .then(registration => {
+                    console.log('ServiceWorker registration successful');
+                    registration.onupdatefound = () => {
+                        const installingWorker = registration.installing;
+                        if (installingWorker) {
+                            installingWorker.onstatechange = () => {
+                                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    waitingWorker = installingWorker;
+                                    updateNotification.classList.remove('hidden');
+                                    updateNotification.classList.add('flex');
+                                }
+                            };
+                        }
+                    };
+                })
+                .catch(err => console.log('ServiceWorker registration failed: ', err));
+        });
+    }
+}
+
+// --- EVENT LISTENERS SETUP ---
+function setupEventListeners() {
+    // Mode selection
+    modeSelectButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            activeMode = button.dataset.mode;
+            renderAppLayout();
+        });
+    });
+
+    changeModeBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        activeMode = null;
+        renderAppLayout();
+    });
+
+    // Sidebar/Nav
+    menuButton.addEventListener('click', toggleSidebar);
+    sidebarOverlay.addEventListener('click', closeSidebar);
+    
+    document.body.addEventListener('click', e => {
+        const navItem = e.target.closest('.nav-item');
+        if (navItem && navItem.dataset.view) {
+            e.preventDefault();
+            navigateTo(navItem.dataset.view);
+        }
+    });
+
+    // Modals
+    modalCancelBtn.addEventListener('click', hideModal);
+    modalConfirmBtn.addEventListener('click', handleConfirmModal);
+    alertOkBtn.addEventListener('click', hideAlert);
+
+    // Update Notification
+    updateBtn.addEventListener('click', () => {
+        waitingWorker?.postMessage({ type: 'SKIP_WAITING' });
+    });
+    
+    if (navigator.serviceWorker) {
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+             window.location.reload();
+        });
+    }
+
+    // Entry View (Additives)
+    materialDescriptionInput.addEventListener('input', handleDescriptionInput);
+    materialDescriptionInput.addEventListener('focus', (e) => {
+        autocompleteVisible = true;
+        handleDescriptionInput(e);
+    });
+    materialDescriptionInput.addEventListener('click', (e) => {
+        autocompleteVisible = true;
+        handleDescriptionInput(e);
+    });
+    document.addEventListener('click', e => {
+        if (!materialDescriptionInput.contains(e.target) && !autocompleteResults.contains(e.target)) {
+            autocompleteResults.classList.add('hidden');
+            autocompleteVisible = false;
+        }
+    });
+
+    clearDescriptionBtn.addEventListener('click', () => {
+        materialDescriptionInput.value = '';
+        selectedMaterial = null;
+        updateEntrySummary();
+        updateUomOptions();
+        renderConversionFactors();
+        clearDescriptionBtn.classList.add('hidden');
+        autocompleteResults.classList.add('hidden');
+        autocompleteVisible = false;
+    });
+
+    autocompleteResults.addEventListener('mousedown', e => {
+        const target = e.target.closest('[data-description]');
+        if (target) {
+            e.preventDefault();
+            const material = appState.additives.masterData.find(m => m.description === target.dataset.description);
+            if (material) selectMaterial(material);
+        }
+    });
+    addDetectionBtn.addEventListener('click', handleAddDetection);
+
+    // View Detections (Additives)
+    viewDetectionsFilter.addEventListener('input', renderViewDetectionsView);
+    viewDetectionsTbody.addEventListener('click', e => {
+        const row = e.target.closest('tr');
+        if(!row) return;
+        const timestamp = row.dataset.timestamp;
+
+        if(e.target.closest('.edit-detection-btn')) {
+            editingDetectionTimestamp = timestamp;
+            renderViewDetectionsView();
+        } else if (e.target.closest('.delete-detection-btn')) {
+            showModal('Sei sicuro di voler eliminare questa rilevazione?', () => {
+                appState.additives.currentDetections = appState.additives.currentDetections.filter(d => d.timestamp !== timestamp);
+                renderViewDetectionsView();
+                saveData();
+            });
+        } else if (e.target.closest('.cancel-edit-btn')) {
+            editingDetectionTimestamp = null;
+            renderViewDetectionsView();
+        } else if (e.target.closest('.save-detection-btn')) {
+            const newQuantity = Number(row.querySelector('.edit-quantity').value);
+            const newUom = row.querySelector('.edit-uom').value;
+            if (isNaN(newQuantity) || newQuantity <= 0) return;
+
+            appState.additives.currentDetections = appState.additives.currentDetections.map(d => d.timestamp === timestamp ? { ...d, quantity: newQuantity, uom: newUom } : d);
+            editingDetectionTimestamp = null;
+            renderViewDetectionsView();
+            saveData();
+        }
+    });
+
+    // Check View (Additives)
+    document.querySelector('#view-check').addEventListener('click', e => {
+        const subviewBtn = e.target.closest('.check-subview-btn');
+        if (subviewBtn) renderCheckView(subviewBtn.dataset.subview);
+    });
+
+    // Export View
+    exportBtn.addEventListener('click', generateExcelExport);
+    
+    // Master Data LIST View (Additives)
+    masterAddArticleBtn.addEventListener('click', () => {
+        editingMasterDataId = 'new';
+        navigateTo('master-edit');
+    });
+
+    masterExportBtn.addEventListener('click', generateMasterDataExport);
+    masterDataFilter.addEventListener('input', renderMasterDataView);
+    masterDataFileInput.addEventListener('change', handleMasterDataFileChange);
+    
+    masterTbody.addEventListener('click', e => {
+        const row = e.target.closest('tr');
+        if (!row) return;
+        const id = row.dataset.id;
+        const itemToDelete = appState.additives.masterData.find(item => item.id === id);
+        
+        if (e.target.closest('.master-edit-row')) {
+            editingMasterDataId = id;
+            navigateTo('master-edit');
+        } else if (e.target.closest('.master-delete-row') && itemToDelete) {
+            showModal(`Sei sicuro di voler eliminare "${itemToDelete.description}"? L'operazione è irreversibile e cancellerà anche tutte le rilevazioni associate.`, () => {
+                appState.additives.masterData = appState.additives.masterData.filter(item => item.id !== id);
+                appState.additives.currentDetections = appState.additives.currentDetections.filter(d => d.code !== itemToDelete.code);
+                renderMasterDataView();
+                saveData();
+            });
+        }
+    });
+
+    // Master Data EDIT View (Additives)
+    masterEditForm.addEventListener('submit', handleMasterEditSave);
+    masterEditCancelBtn.addEventListener('click', () => navigateTo('master'));
+    masterEditAddFactorBtn.addEventListener('click', handleMasterAddFactor);
+    masterEditFactorsContainer.addEventListener('click', e => {
+        const deleteBtn = e.target.closest('.master-edit-delete-factor-btn');
+        if (deleteBtn) {
+            const uomToDelete = deleteBtn.dataset.uom;
+            const item = appState.additives.masterData.find(m => m.id === editingMasterDataId);
+            if (item && uomToDelete) {
+                delete item[uomToDelete];
+                renderMasterDataEditView();
+            }
+        }
+    });
+
+    // Cellulose General
+    celluloseEntryTbody.addEventListener('click', (e) => {
+        const btn = e.target.closest('.cellulose-entry-btn');
+        if (btn) {
+            openCelluloseEntryModal(btn.dataset.materialId, btn.dataset.uom, false);
+        }
+    });
+    
+    // Cellulose View Detections
+    celluloseViewFilter.addEventListener('input', renderCelluloseViewDetectionsView);
+
+    // Cellulose Check View
+    const celluloseCheckView = document.getElementById('view-cellulose-check');
+    celluloseCheckView.addEventListener('click', e => {
+        const tabBtn = e.target.closest('.cellulose-check-tab');
+        if (tabBtn) {
+            const newTab = tabBtn.id.includes('not-counted') ? 'not-counted' : 'previous-inventory';
+            if (newTab !== celluloseCheckActiveTab) {
+                celluloseCheckActiveTab = newTab;
+                cellulosePreviousInventoryEditMode = false; // Reset edit mode on tab switch
+                renderCelluloseCheckView();
+            }
+            return;
+        }
+
+        const prevInvContent = e.target.closest('#cellulose-check-content');
+        if (!prevInvContent) return;
+
+        if (e.target.closest('#cellulose-previous-load-btn')) {
+            prevInvContent.querySelector('#cellulosePreviousInventoryFile').click();
+        } else if (e.target.closest('#cellulose-previous-edit-toggle-btn')) {
+            cellulosePreviousInventoryEditMode = !cellulosePreviousInventoryEditMode;
+            renderCelluloseCheckPreviousInventorySubview();
+        } else if (e.target.closest('#cellulose-previous-export-btn')) {
+            generateCelluloseExport(appState.cellulose.previousInventory, 'Inventario_Precedente');
+        } else if (e.target.closest('#cellulose-previous-delete-btn')) {
+            handleCelluloseDeletePrevious();
+        }
+        
+        const tbody = e.target.closest('#cellulose-check-previous-tbody');
+        if (tbody && cellulosePreviousInventoryEditMode) {
+            const btn = e.target.closest('.cellulose-entry-btn');
+            if (btn) {
+                openCelluloseEntryModal(btn.dataset.materialId, btn.dataset.uom, true);
+            }
+        }
+    });
+    celluloseCheckView.addEventListener('change', e => {
+        const fileInput = e.target.closest('#cellulosePreviousInventoryFile');
+        if (fileInput) {
+            handleCellulosePreviousFileChange(e);
+        }
+    });
+
+    // Cellulose Export View
+    celluloseExportCurrentBtn.addEventListener('click', () => generateCelluloseExport(appState.cellulose.celluloseCounts, 'Inventario_Cellulosa_Attuale'));
+    celluloseSetAsPreviousBtn.addEventListener('click', handleCelluloseSetAsPrevious);
+
+    // Cellulose Entry Modal
+    celluloseEntryModal.addEventListener('click', e => {
+        if (e.target === celluloseEntryModal) closeCelluloseEntryModal();
+    });
+    celluloseModalCloseBtn.addEventListener('click', closeCelluloseEntryModal);
+    celluloseModalInsertBtn.addEventListener('click', () => {
+        const { material, uom, isPrevious } = activeCelluloseEntry;
+        const countsObject = isPrevious ? appState.cellulose.previousInventory : appState.cellulose.celluloseCounts;
+        const input = celluloseModalEntriesList.querySelector('.cellulose-modal-new-input');
+        const value = parseInt(input.value, 10);
+
+        if (material && uom && !isNaN(value) && value > 0) {
+            if (!countsObject[material.id]) countsObject[material.id] = {};
+            if (!countsObject[material.id][uom]) countsObject[material.id][uom] = [];
+            
+            countsObject[material.id][uom].push({ value, timestamp: new Date().toISOString() });
+            saveData();
+            updateCelluloseTotalOnScreen(material.id, isPrevious);
+            renderCelluloseModalContent();
+        } else if (input) {
+            input.value = '';
+        }
+    });
+    celluloseModalEditBtn.addEventListener('click', () => {
+        const { material, uom, editMode, isPrevious } = activeCelluloseEntry;
+        const countsObject = isPrevious ? appState.cellulose.previousInventory : appState.cellulose.celluloseCounts;
+
+        if (editMode) { // Was in edit mode, now saving
+            const inputs = celluloseModalEntriesList.querySelectorAll('.cellulose-modal-edit-input');
+            const originalEntries = (countsObject[material.id]?.[uom] || []).slice().reverse();
+            let updatedEntries = [];
+            
+            inputs.forEach(input => {
+                const originalIndex = parseInt(input.dataset.originalIndex, 10);
+                const originalEntry = originalEntries[originalIndex];
+                const newValue = parseInt(input.value, 10);
+
+                if (originalEntry) {
+                    // Find the corresponding original entry to reverse it back later
+                    const originalToKeep = (countsObject[material.id]?.[uom] || []).find(e => e.timestamp === originalEntry.timestamp);
+                    if (originalToKeep) {
+                         if (!isNaN(newValue) && newValue > 0) {
+                             updatedEntries.push({ ...originalToKeep, value: newValue });
+                         } // if invalid, it gets effectively deleted
+                    }
+                }
+            });
+
+            // Reconstruct the array preserving other entries if any were deleted
+            const originalTimestamps = originalEntries.map(e => e.timestamp);
+            const otherEntries = (countsObject[material.id]?.[uom] || []).filter(e => !originalTimestamps.includes(e.timestamp));
+            
+            countsObject[material.id][uom] = [...otherEntries, ...updatedEntries];
+            
+            activeCelluloseEntry.editMode = false;
+        } else { // Entering edit mode
+            activeCelluloseEntry.editMode = true;
+        }
+        saveData();
+        updateCelluloseTotalOnScreen(material.id, isPrevious);
+        renderCelluloseModalContent();
+    });
+    celluloseModalDeleteAllBtn.addEventListener('click', () => {
+        const { material, uom, isPrevious } = activeCelluloseEntry;
+        const countsObject = isPrevious ? appState.cellulose.previousInventory : appState.cellulose.celluloseCounts;
+        showModal(`Sei sicuro di voler eliminare tutti i conteggi di ${uom} per questo materiale?`, () => {
+            if (countsObject[material.id] && countsObject[material.id][uom]) {
+                delete countsObject[material.id][uom];
+                saveData();
+                updateCelluloseTotalOnScreen(material.id, isPrevious);
+                renderCelluloseModalContent();
+            }
+        });
+    });
+    celluloseModalEntriesList.addEventListener('click', e => {
+        const deleteBtn = e.target.closest('.cellulose-modal-delete-row');
+        if (deleteBtn) {
+            const { material, uom, isPrevious } = activeCelluloseEntry;
+            const countsObject = isPrevious ? appState.cellulose.previousInventory : appState.cellulose.celluloseCounts;
+            const row = deleteBtn.closest('.entry-row');
+            const timestamp = row.dataset.timestamp;
+            if (countsObject[material.id]?.[uom]) {
+                countsObject[material.id][uom] = countsObject[material.id][uom].filter(entry => entry.timestamp !== timestamp);
+                saveData();
+                updateCelluloseTotalOnScreen(material.id, isPrevious);
+                renderCelluloseModalContent();
+            }
+        }
+    });
+    celluloseModalShowPreviousBtn.addEventListener('click', () => {
+        const { material } = activeCelluloseEntry;
+        if (!material) return;
+
+        cellulosePreviousModalTitle.textContent = `Storico: ${formatCelluloseDescription(material.descrizione_materiale)}`;
+        
+        const prevCounts = appState.cellulose.previousInventory[material.id];
+        if (!prevCounts || Object.keys(prevCounts).length === 0) {
+            cellulosePreviousModalContent.innerHTML = `<p class="text-center text-gray-500">Nessun dato per l'inventario precedente.</p>`;
+        } else {
+            let summaryHtml = '';
+            let uomTotals = {};
+
+            // Calculate totals for each UOM
+            for (const uom in prevCounts) {
+                uomTotals[uom] = prevCounts[uom].reduce((sum, entry) => sum + entry.value, 0);
+            }
+            
+            // Build summary HTML
+            if (Object.keys(uomTotals).length > 0 && Object.values(uomTotals).some(t => t > 0)) {
+                summaryHtml += '<h4 class="font-bold text-md mb-2">Riepilogo Scorso Inventario</h4>';
+                summaryHtml += '<ul class="space-y-1 text-sm">';
+                for (const uom in uomTotals) {
+                    if (uomTotals[uom] > 0) {
+                        summaryHtml += `<li class="flex justify-between items-center"><span class="font-semibold text-gray-700">${uom}:</span><span>${uomTotals[uom]}</span></li>`;
+                    }
+                }
+                summaryHtml += '</ul>';
+
+                // Display final converted total
+                const total = calculateCelluloseTotal(material, appState.cellulose.previousInventory);
+                const totalUnit = material.PAC ? 'BAL' : 'KG';
+                summaryHtml += `<div class="mt-4 pt-4 border-t flex justify-between items-center font-bold text-lg"><span class="text-gray-800">Totale Finale:</span><span>${total.toFixed(0)} ${totalUnit}</span></div>`;
+            } else {
+                 summaryHtml = `<p class="text-center text-gray-500">Nessun dato per l'inventario precedente.</p>`;
+            }
+            
+            cellulosePreviousModalContent.innerHTML = summaryHtml;
+        }
+
+        cellulosePreviousInventoryModal.classList.remove('hidden');
+        cellulosePreviousInventoryModal.classList.add('flex');
+    });
+
+    cellulosePreviousInventoryModal.addEventListener('click', e => {
+        if (e.target === cellulosePreviousInventoryModal) {
+            cellulosePreviousInventoryModal.classList.add('hidden');
+            cellulosePreviousInventoryModal.classList.remove('flex');
+        }
+    });
+
+    cellulosePreviousModalCloseBtn.addEventListener('click', () => {
+        cellulosePreviousInventoryModal.classList.add('hidden');
+        cellulosePreviousInventoryModal.classList.remove('flex');
+    });
+    
+    // Cellulose Master View
+    celluloseMasterDataFileInput.addEventListener('change', handleCelluloseMasterFileChange);
+    celluloseMasterExportBtn.addEventListener('click', generateCelluloseMasterExport);
+    celluloseMasterDataFilter.addEventListener('input', renderCelluloseMasterView);
+    celluloseMasterAddBtn.addEventListener('click', () => {
+        editingCelluloseMasterId = 'new';
+        navigateTo('cellulose-master-edit');
+    });
+    celluloseMasterDeleteAllBtn.addEventListener('click', () => {
+        showModal('Sei sicuro di voler cancellare l\'intera anagrafica cellulosa? L\'operazione è irreversibile e cancellerà anche tutti i conteggi associati.', () => {
+            appState.cellulose.masterData = [];
+            appState.cellulose.celluloseCounts = {};
+            saveData();
+            renderCelluloseMasterView();
+        });
+    });
+    celluloseMasterTbody.addEventListener('click', e => {
+        const row = e.target.closest('tr');
+        if (!row) return;
+        const id = row.dataset.id;
+        const itemToDelete = appState.cellulose.masterData.find(item => item.id === id);
+
+        if (e.target.closest('.cellulose-master-edit-row')) {
+            editingCelluloseMasterId = id;
+            navigateTo('cellulose-master-edit');
+        } else if (e.target.closest('.cellulose-master-delete-row') && itemToDelete) {
+            showModal(`Sei sicuro di voler eliminare "${itemToDelete.descrizione_materiale}"? L'operazione è irreversibile.`, () => {
+                appState.cellulose.masterData = appState.cellulose.masterData.filter(item => item.id !== id);
+                delete appState.cellulose.celluloseCounts[id]; // Also remove counts
+                saveData();
+                renderCelluloseMasterView();
+            });
+        }
+    });
+
+    // Cellulose Master EDIT View
+    celluloseMasterEditForm.addEventListener('submit', handleCelluloseMasterEditSave);
+    celluloseMasterEditCancelBtn.addEventListener('click', () => navigateTo('cellulose-master'));
+}
+
+function handleCelluloseSetAsPrevious() {
+    showModal("Sei sicuro di voler impostare l'inventario corrente come 'scorso inventario'? Questa operazione sovrascriverà i dati precedenti.", () => {
+        appState.cellulose.previousInventory = JSON.parse(JSON.stringify(appState.cellulose.celluloseCounts));
+        saveData();
+        // Optional: Provide feedback to the user
+        showAlert("L'inventario precedente è stato aggiornato con i dati correnti.");
+        navigateTo('cellulose-check'); // Navigate to check view to see the result
+    });
+}
+
+function handleCelluloseDeletePrevious() {
+    showModal("Sei sicuro di voler eliminare tutti i dati dell'inventario precedente? L'operazione è irreversibile.", () => {
+        appState.cellulose.previousInventory = {};
+        saveData();
+        renderCelluloseCheckView();
+    });
+}
+
+function handleCellulosePreviousFileChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            const data = event.target?.result;
+            const workbook = XLSX.read(data, { type: 'array' });
+            
+            // We expect the "Dettaglio" sheet from our own export
+            const detailSheetName = "Dettaglio";
+            if (!workbook.SheetNames.includes(detailSheetName)) {
+                showAlert(`File non valido. Manca il foglio "${detailSheetName}".`);
+                return;
+            }
+            
+            const worksheet = workbook.Sheets[detailSheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+            if (jsonData.length === 0) return;
+            
+            const newPreviousInventory = {};
+            const masterDataMap = new Map(appState.cellulose.masterData.map(m => [m.codice_materiale.toString(), m]));
+
+            jsonData.forEach(row => {
+                const code = row['codice_materiale'].toString();
+                const material = masterDataMap.get(code);
+                if (!material) return; // Skip if material not in current master data
+
+                const materialId = material.id;
+                const uom = row['unità_di_misura'];
+                const quantity = Number(row['quantità_inserita']);
+                const timestamp = new Date(row['ora_registrazione'] || Date.now()).toISOString();
+
+                if (!uom || isNaN(quantity) || quantity <= 0) return;
+
+                if (!newPreviousInventory[materialId]) newPreviousInventory[materialId] = {};
+                if (!newPreviousInventory[materialId][uom]) newPreviousInventory[materialId][uom] = [];
+                newPreviousInventory[materialId][uom].push({ value: quantity, timestamp });
+            });
+            
+            appState.cellulose.previousInventory = newPreviousInventory;
+            saveData();
+            renderCelluloseCheckView();
+            showAlert("Inventario precedente caricato con successo.");
+
+        } catch (error) {
+            console.error("Error reading previous inventory file.", error);
+            showAlert("Errore durante la lettura del file. Assicurati che sia un file Excel valido generato dall'app.");
+        } finally {
+            e.target.value = ''; // Reset file input
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function generateCelluloseExport(countsObject, baseFileName) {
+    if (appState.cellulose.masterData.length === 0 || Object.keys(countsObject).length === 0) {
+        showAlert("Nessun dato da esportare.");
+        return;
+    }
+
+    const masterDataMap = new Map(appState.cellulose.masterData.map(m => [m.id, m]));
+
+    // Summary Sheet
+    const summaryData = appState.cellulose.masterData
+        .map(material => {
+            const total = calculateCelluloseTotal(material, countsObject);
+            const totalUnit = material.PAC ? 'BAL' : 'KG';
+            return {
+                'codice_materiale': material.codice_materiale,
+                'descrizione_materiale': material.descrizione_materiale,
+                'quantità_totale': total,
+                'unità_finale': totalUnit,
+            };
+        })
+        .sort((a,b) => a['descrizione_materiale'].localeCompare(b['descrizione_materiale']));
+    
+    const summaryWorksheet = XLSX.utils.json_to_sheet(summaryData);
+
+    // Detail Sheet
+    let detailData = [];
+    for (const materialId in countsObject) {
+        const material = masterDataMap.get(materialId);
+        if (!material) continue;
+        for (const uom in countsObject[materialId]) {
+            countsObject[materialId][uom].forEach(entry => {
+                detailData.push({
+                    'codice_materiale': material.codice_materiale,
+                    'descrizione_materiale': material.descrizione_materiale,
+                    'unità_di_misura': uom,
+                    'quantità_inserita': entry.value,
+                    'ora_registrazione': new Date(entry.timestamp).toLocaleString('it-IT')
+                });
+            });
+        }
+    }
+    detailData.sort((a,b) => new Date(b['ora_registrazione']) - new Date(a['ora_registrazione']));
+    const detailWorksheet = XLSX.utils.json_to_sheet(detailData);
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, summaryWorksheet, "Riepilogo");
+    XLSX.utils.book_append_sheet(workbook, detailWorksheet, "Dettaglio");
+
+    const now = new Date();
+    const formattedDate = now.toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
+    const fileName = `${baseFileName}_${formattedDate}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+}
+
+// --- APP INITIALIZATION ---
+function init() {
+    loadData();
+    migrateOldData();
+    setupEventListeners();
+    renderAppLayout();
+    registerServiceWorker(); // Register the service worker
+}
+
+// Start the application
+document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
+
