@@ -1,12 +1,13 @@
 // This is the service worker script, which listens for background events.
 
-const CACHE_NAME = 'gitty-mag-cache-v1';
+const CACHE_NAME = 'gitty-mag-cache-v2'; // Cache version incremented
 // These are the files that will be cached for offline use.
 const urlsToCache = [
   '.', // This is an alias for the root URL, which typically serves index.html.
   'index.html',
   'logo-gitty-mag.png',
-  'logo-gitty-mag-creator.png'
+  'logo-gitty-mag-creator.png',
+  'logo-gitty-mag-maskable.png' // Added new maskable icon to cache
 ];
 
 // The 'install' event is fired when the service worker is first installed.
@@ -22,6 +23,24 @@ self.addEventListener('install', event => {
       })
   );
 });
+
+// Add an 'activate' event listener to clean up old caches
+self.addEventListener('activate', event => {
+  const cacheWhitelist = [CACHE_NAME];
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
+            console.log('Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+});
+
 
 // The 'fetch' event is fired for every network request made by the page.
 self.addEventListener('fetch', event => {
@@ -39,3 +58,4 @@ self.addEventListener('fetch', event => {
     )
   );
 });
+
