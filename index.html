@@ -114,7 +114,7 @@
           <div class="p-6 text-center">
               <div class="mb-2">
                   <img src="logo-gitty-mag.png" alt="Gitty Mag Logo" class="h-20 mx-auto" />
-                  <p class="text-sm font-semibold text-gray-700 mt-2">Il magazzino, in un tap.</p>
+                  <p class="text-sm font-semibold text-gray-700 mt-2">Gestione Inventario Semplificata</p>
               </div>
           </div>
           <nav id="main-nav" class="p-4 space-y-2">
@@ -333,19 +333,17 @@
         <div id="view-master" class="view p-4 sm:p-6 lg:p-8">
             <div class="bg-white rounded-lg shadow-md max-w-7xl mx-auto animate-fade-in-up">
                 <div class="p-6">
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                         <h2 class="text-2xl font-bold text-gray-800 mb-4 sm:mb-0">Anagrafica Materiali (Additivi)</h2>
-                         <div class="flex items-center space-x-2">
-                             <label for="masterDataFile" class="btn bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md font-semibold text-sm cursor-pointer">Carica File</label>
-                             <input type="file" id="masterDataFile" accept=".xlsx, .csv" class="hidden" />
-                             <button id="master-export-btn" class="btn bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md font-semibold text-sm">Esporta</button>
-                         </div>
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                        <h2 class="text-2xl font-bold text-gray-800 shrink-0">Anagrafica Additivi</h2>
+                        <div class="w-full sm:w-auto grid grid-cols-3 gap-2">
+                            <label for="masterDataFile" class="btn text-center bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-md font-semibold text-sm cursor-pointer">Carica</label>
+                            <input type="file" id="masterDataFile" accept=".xlsx, .csv" class="hidden" />
+                            <button id="master-export-btn" class="btn bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-md font-semibold text-sm">Esporta</button>
+                            <button id="master-add-article-btn" class="btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md font-semibold text-sm">Aggiungi</button>
+                        </div>
                     </div>
-                     <p class="text-sm text-gray-500 mt-2">Carica un file Excel o CSV con colonne 'codice', 'descrizione' e colonne opzionali per i fattori di conversione (es. IBC, SAC, FUS).</p>
-                    <div class="mt-4 flex items-center justify-between">
-                         <input type="text" id="master-data-filter" placeholder="Filtra per descrizione o codice..." class="flex-grow rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                         <button id="master-add-article-btn" class="ml-4 btn bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-semibold text-sm">Aggiungi</button>
-                    </div>
+                    <p class="text-sm text-gray-500 mb-4">Carica o gestisci l'anagrafica degli additivi.</p>
+                    <input type="text" id="master-data-filter" placeholder="Filtra per descrizione o codice..." class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
@@ -578,10 +576,10 @@
                 </div>
 
                 <h3 class="text-xl font-bold text-gray-800 mb-2">Mission</h3>
-                <p class="text-gray-600 mb-6">"Semplificare il conteggio e la gestione del magazzino, trasformandoli in un'operazione rapida e senza stress."</p>
+                <p class="text-gray-600 mb-6">"Ottimizzare la gestione dell'inventario di magazzino attraverso una soluzione digitale efficiente, rapida e intuitiva."</p>
 
                 <h3 class="text-xl font-bold text-gray-800 mb-2">Versione</h3>
-                <p class="text-gray-600 mb-6">Gitty Mag v.2.2 (PWA Edition)</p>
+                <p class="text-gray-600 mb-6">gittymag 2.0</p>
 
                 <h3 class="text-xl font-bold text-gray-800 mb-2">Supporto e Segnalazioni</h3>
                 <p class="text-gray-600 mb-6">Per problemi tecnici o suggerimenti, contattare:<br>
@@ -589,7 +587,7 @@
                 </p>
                 
                 <div class="border-t pt-4 mt-8 text-center text-sm text-gray-500">
-                    <p>&copy; 2024 Giancarlo Tessarolo - Tutti i diritti riservati.</p>
+                    <p>&copy; 2025 Giancarlo Tessarolo - Tutti i diritti riservati.</p>
                 </div>
             </div>
         </div>
@@ -880,7 +878,12 @@ const getKgValue = (code, quantity, uom) => {
 // --- LOCAL STORAGE ---
 const saveData = () => {
     try {
-        localStorage.setItem('gittyMagAppState', JSON.stringify(appState));
+        const sessionData = {
+            appState: appState,
+            activeMode: activeMode,
+            activeView: activeView
+        };
+        localStorage.setItem('gittyMagAppState', JSON.stringify(sessionData));
     } catch (error) {
         console.error("Failed to save data to localStorage", error);
     }
@@ -888,25 +891,37 @@ const saveData = () => {
 
 const loadData = () => {
     try {
-        const savedState = localStorage.getItem('gittyMagAppState');
-        if (savedState) {
-            const parsedState = JSON.parse(savedState);
-            // Ensure all keys exist to prevent errors with old data structures
-            appState = {
-                additives: { ...appState.additives, ...parsedState.additives },
-                cellulose: { ...appState.cellulose, ...parsedState.cellulose }
-            };
-            // Manually add the new properties if they're missing from old saved state
-            if (typeof appState.cellulose.inventoryInProgress === 'undefined') {
+        const savedData = localStorage.getItem('gittyMagAppState');
+        if (savedData) {
+            const parsedData = JSON.parse(savedData);
+            // Check for new format (with appState key) vs old format
+            if (parsedData.appState) { 
+                appState = {
+                    additives: { ...appState.additives, ...(parsedData.appState.additives || {}) },
+                    cellulose: { ...appState.cellulose, ...(parsedData.appState.cellulose || {}) }
+                };
+                activeMode = parsedData.activeMode || null;
+                activeView = parsedData.activeView || (activeMode === 'cellulose' ? 'cellulose-start' : 'start');
+            } else { // Handle old data format
+                const parsedState = parsedData; 
+                 appState = {
+                    additives: { ...appState.additives, ...(parsedState.additives || {}) },
+                    cellulose: { ...appState.cellulose, ...(parsedState.cellulose || {}) }
+                };
+            }
+
+            // Ensure new state properties exist to prevent errors with old saved data
+            if (appState.cellulose && typeof appState.cellulose.inventoryInProgress === 'undefined') {
                 appState.cellulose.inventoryInProgress = Object.keys(appState.cellulose.celluloseCounts || {}).length > 0;
             }
-            if (typeof appState.cellulose.previousInventory === 'undefined') {
+            if (appState.cellulose && typeof appState.cellulose.previousInventory === 'undefined') {
                 appState.cellulose.previousInventory = {};
             }
         }
     } catch (error) {
-        console.error("Failed to load data from localStorage", error);
+        console.error("Failed to load or parse data from localStorage", error);
         resetAllState();
+        localStorage.removeItem('gittyMagAppState'); // Clear corrupted data
     }
 };
 
@@ -936,25 +951,34 @@ const migrateOldData = () => {
     const oldInventory = localStorage.getItem('gittyMagInventoryData');
     const oldState = localStorage.getItem('gittyMagAppState');
 
+    // This migration only runs if old, separate data exists AND the new combined state doesn't.
     if (!oldState && (oldMaster || oldInventory)) {
         console.log('Old data found, migrating to new state structure...');
+        let newAppState = { additives: {}, cellulose: {} };
         if (oldMaster) {
-            appState.additives.masterData = JSON.parse(oldMaster);
+            newAppState.additives.masterData = JSON.parse(oldMaster);
         }
         if (oldInventory) {
             const { previousInventory, currentDetections } = JSON.parse(oldInventory);
-            appState.additives.previousInventory = previousInventory || {};
-            appState.additives.currentDetections = currentDetections || [];
+            newAppState.additives.previousInventory = previousInventory || {};
+            newAppState.additives.currentDetections = currentDetections || [];
         }
         
-        saveData(); // Save in new format
+        // Save in the new combined format
+        localStorage.setItem('gittyMagAppState', JSON.stringify({ appState: newAppState, activeMode: null, activeView: 'start' }));
+        
+        // Clean up old items
         localStorage.removeItem('gittyMagMasterData');
         localStorage.removeItem('gittyMagInventoryData');
         localStorage.removeItem('gittyMagCelluloseCounts');
         localStorage.removeItem('gittyMagMasterData_cellulose');
         console.log('Old data migrated and removed.');
+        
+        // Reload data to ensure the app uses the newly migrated state
+        loadData();
     }
 };
+
 
 // --- RENDER FUNCTIONS ---
 
@@ -3068,8 +3092,8 @@ function generateCelluloseExport(countsObject, baseFileName) {
 
 // --- APP INITIALIZATION ---
 function init() {
-    loadData();
-    migrateOldData();
+    migrateOldData(); // Check for old data first and migrate if needed
+    loadData(); // Then load the (potentially migrated) data
     setupEventListeners();
     renderAppLayout();
     registerServiceWorker(); // Register the service worker
@@ -3080,4 +3104,3 @@ document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
-
