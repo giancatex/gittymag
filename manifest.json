@@ -14,10 +14,10 @@
       "purpose": "any"
     },
     {
-      "src": "logo-gitty-mag.png",
+      "src": "logo-gitty-mag-maskable.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable"
     }
   ]
 }
