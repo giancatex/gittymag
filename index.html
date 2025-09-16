@@ -335,9 +335,13 @@
                 <div class="p-6">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                         <h2 class="text-2xl font-bold text-gray-800 shrink-0">Anagrafica Additivi</h2>
-                        <div class="w-full sm:w-auto grid grid-cols-3 gap-2">
+                        <div class="w-full sm:w-auto flex items-center gap-2">
                             <label for="masterDataFile" class="btn text-center bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-md font-semibold text-sm cursor-pointer">Carica</label>
                             <input type="file" id="masterDataFile" accept=".xlsx, .csv" class="hidden" />
+                            <button id="additives-master-info-btn" class="p-2 text-blue-600 hover:bg-blue-100 rounded-full">
+                               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                            </button>
+                            <div class="flex-grow"></div>
                             <button id="master-export-btn" class="btn bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-md font-semibold text-sm">Esporta</button>
                             <button id="master-add-article-btn" class="btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md font-semibold text-sm">Aggiungi</button>
                         </div>
@@ -494,9 +498,13 @@
                  <div class="p-6">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                         <h2 class="text-2xl font-bold text-gray-800 shrink-0">Anagrafica Cellulosa</h2>
-                        <div class="w-full sm:w-auto grid grid-cols-2 gap-2">
+                         <div class="w-full sm:w-auto flex items-center gap-2">
                             <label for="celluloseMasterDataFile" class="btn text-center bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-md font-semibold text-sm cursor-pointer">Carica</label>
                             <input type="file" id="celluloseMasterDataFile" accept=".xlsx, .csv" class="hidden" />
+                            <button id="cellulose-master-info-btn" class="p-2 text-blue-600 hover:bg-blue-100 rounded-full">
+                               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                            </button>
+                            <div class="flex-grow"></div>
                             <button id="cellulose-master-export-btn" class="btn bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-md font-semibold text-sm">Esporta</button>
                             <button id="cellulose-master-add-btn" class="btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md font-semibold text-sm">Aggiungi</button>
                             <button id="cellulose-master-delete-all-btn" class="btn bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-md font-semibold text-sm">Cancella Tutto</button>
@@ -579,7 +587,7 @@
                 <p class="text-gray-600 mb-6">"Ottimizzare la gestione dell'inventario di magazzino attraverso una soluzione digitale efficiente, rapida e intuitiva."</p>
 
                 <h3 class="text-xl font-bold text-gray-800 mb-2">Versione</h3>
-                <p class="text-gray-600 mb-6">gittymag 2.0</p>
+                <p class="text-gray-600 mb-6">gittymag 2.1</p>
 
                 <h3 class="text-xl font-bold text-gray-800 mb-2">Supporto e Segnalazioni</h3>
                 <p class="text-gray-600 mb-6">Per problemi tecnici o suggerimenti, contattare:<br>
@@ -624,7 +632,7 @@
           </div>
           <h3 class="text-lg leading-6 font-medium text-gray-900 mt-4">Informazione</h3>
           <div class="mt-2 px-7 py-3">
-            <p id="alert-message" class="text-sm text-gray-500"></p>
+            <p id="alert-message" class="text-sm text-gray-500 whitespace-pre-wrap"></p>
           </div>
           <div class="items-center px-4 py-3">
             <button id="alert-ok-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 w-full">OK</button>
@@ -790,6 +798,8 @@ const masterTbody = document.getElementById('master-tbody');
 const masterAddArticleBtn = document.getElementById('master-add-article-btn');
 const masterExportBtn = document.getElementById('master-export-btn');
 const masterDataFileInput = document.getElementById('masterDataFile');
+const additivesMasterInfoBtn = document.getElementById('additives-master-info-btn');
+
 
 // Master Data Edit View (Additives)
 const masterEditTitle = document.getElementById('master-edit-title');
@@ -843,6 +853,7 @@ const celluloseMasterExportBtn = document.getElementById('cellulose-master-expor
 const celluloseMasterDataFileInput = document.getElementById('celluloseMasterDataFile');
 const celluloseMasterAddBtn = document.getElementById('cellulose-master-add-btn');
 const celluloseMasterDeleteAllBtn = document.getElementById('cellulose-master-delete-all-btn');
+const celluloseMasterInfoBtn = document.getElementById('cellulose-master-info-btn');
 
 // Cellulose Master Edit View
 const celluloseMasterEditTitle = document.getElementById('cellulose-master-edit-title');
@@ -1002,7 +1013,8 @@ const renderAppLayout = () => {
         const isCelluloseInventoryActive = appState.cellulose.inventoryInProgress;
         navCelluloseEntry.classList.toggle('nav-item-disabled', !isCelluloseInventoryActive);
         navCelluloseView.classList.toggle('nav-item-disabled', !isCelluloseInventoryActive);
-        navCelluloseCheck.classList.toggle('nav-item-disabled', !isCelluloseInventoryActive);
+        // navCelluloseCheck is now always enabled to allow access to previous inventory
+        navCelluloseCheck.classList.remove('nav-item-disabled');
         navCelluloseExport.classList.toggle('nav-item-disabled', !isCelluloseInventoryActive);
 
         if (!activeView || (activeMode === 'additives' && activeView.startsWith('cellulose')) || (activeMode === 'cellulose' && !activeView.startsWith('cellulose')) || activeView === 'info') {
@@ -1611,12 +1623,13 @@ function renderCelluloseViewDetectionsView() {
 }
 
 function renderCelluloseCheckView() {
-    if (!appState.cellulose.inventoryInProgress) {
-        celluloseCheckContent.innerHTML = `<div class="bg-white p-6 rounded-lg shadow"><p class="text-center text-gray-500">Nessun inventario in corso.<br><a href="#cellulose-start" data-view="cellulose-start" class="nav-item text-green-600 font-semibold hover:underline">Inizia un nuovo inventario</a></p></div>`;
-        celluloseCheckTabs.forEach(tab => tab.classList.add('hidden'));
-        return;
+    // If no inventory is in progress, default to the previous inventory tab.
+    if (!appState.cellulose.inventoryInProgress && celluloseCheckActiveTab === 'not-counted') {
+        celluloseCheckActiveTab = 'previous-inventory';
     }
-    celluloseCheckTabs.forEach(tab => tab.classList.remove('hidden'));
+
+    // Hide 'not-counted' tab if no inventory is running
+    document.getElementById('cellulose-check-tab-not-counted').classList.toggle('hidden', !appState.cellulose.inventoryInProgress);
 
     celluloseCheckTabs.forEach(tab => {
         const isActive = tab.id.includes(celluloseCheckActiveTab);
@@ -1632,6 +1645,7 @@ function renderCelluloseCheckView() {
         renderCelluloseCheckPreviousInventorySubview();
     }
 }
+
 
 function renderCelluloseCheckNotCountedSubview() {
     const groupSortOrder = { 1110: 1, 1100: 2, 1130: 3, 1150: 4, 1160: 5, 1170: 6 };
@@ -1802,8 +1816,8 @@ function renderConversionFactors() {
     }
     
     const factors = Object.entries(selectedMaterial)
-        .filter(([key, value]) => !['id', 'code', 'description', 'KG'].includes(key) && value)
-        .map(([key, value]) => ({ unit: key.toUpperCase(), factor: value }));
+        .filter(([key, value]) => !['ID', 'CODE', 'DESCRIPTION'].includes(key.toUpperCase()) && value)
+        .map(([key, value]) => ({ unit: key.toUpperCase(), factor: Number(value) || 0 }));
 
     if (factors.length === 0) {
         conversionFactorsCard.classList.add('hidden');
@@ -1811,23 +1825,44 @@ function renderConversionFactors() {
     }
 
     conversionMaterialName.textContent = selectedMaterial.description;
-    conversionFactorsGrid.innerHTML = factors.map(({unit, factor}) => `
+
+    let factorsHtml = factors.map(({unit, factor}) => {
+        // Don't display KG as a conversion factor against itself
+        if (unit === 'KG') return ''; 
+        return `
         <div class="bg-gray-100 p-2 rounded-md text-center">
             <p class="text-sm font-bold text-gray-800">${unit}</p>
             <p class="text-xs text-gray-600">1 ${unit} = ${factor} KG</p>
         </div>
-    `).join('');
+    `}).join('');
+    
+    // New logic for PL to SAC conversion
+    const plFactorEntry = factors.find(f => f.unit === 'PL');
+    const sacFactorEntry = factors.find(f => f.unit === 'SAC');
+
+    if (plFactorEntry && sacFactorEntry && plFactorEntry.factor > 0 && sacFactorEntry.factor > 0) {
+        const sacsPerPallet = (plFactorEntry.factor / sacFactorEntry.factor);
+        // Display with 1 decimal place only if it's not a whole number
+        const sacsDisplay = sacsPerPallet % 1 === 0 ? sacsPerPallet.toFixed(0) : sacsPerPallet.toFixed(1);
+        factorsHtml += `
+            <div class="bg-blue-100 p-2 rounded-md text-center">
+                <p class="text-sm font-bold text-blue-800">PL</p>
+                <p class="text-xs text-blue-600">1 PL = ${sacsDisplay} SAC</p>
+            </div>
+        `;
+    }
+
+    conversionFactorsGrid.innerHTML = factorsHtml;
     conversionFactorsCard.classList.remove('hidden');
 }
 
 // --- CORE LOGIC & EVENT HANDLERS ---
 
 function navigateTo(viewId) {
-    const celluloseInventoryViews = ['cellulose-entry', 'cellulose-view', 'cellulose-check', 'cellulose-export'];
+    const celluloseInventoryViews = ['cellulose-entry', 'cellulose-view', 'cellulose-export'];
+    // cellulose-check is now always available
     if (celluloseInventoryViews.includes(viewId) && !appState.cellulose.inventoryInProgress) {
         activeView = 'cellulose-start';
-        // Reset check view state if navigating away because inventory ended
-        celluloseCheckActiveTab = 'not-counted';
         cellulosePreviousInventoryEditMode = false;
     } else {
         activeView = viewId;
@@ -2012,6 +2047,7 @@ function selectMaterial(material) {
     autocompleteResults.classList.add('hidden');
     autocompleteVisible = false;
     clearDescriptionBtn.classList.remove('hidden');
+    quantityInput.focus();
 }
 
 function handleDescriptionInput(e) {
@@ -2209,69 +2245,139 @@ function handleMasterAddFactor() {
 }
 
 function generateExcelExport() {
-    if (appState.additives.masterData.length === 0) return;
+    if (appState.additives.masterData.length === 0) {
+        showAlert("Nessuna anagrafica caricata. Impossibile esportare.");
+        return;
+    }
 
-    const hasSap = Object.keys(appState.additives.previousInventory).length > 0;
+    const wb = XLSX.utils.book_new();
+    const masterDataMap = new Map(appState.additives.masterData.map(m => [m.code, m]));
+    const hasInitialSap = Object.keys(appState.additives.previousInventory).length > 0;
+
+    // --- Common Data Preparation ---
     const detectedTotals = new Map();
     appState.additives.currentDetections.forEach(det => {
         const kgValue = getKgValue(det.code, det.quantity, det.uom);
         detectedTotals.set(det.code, (detectedTotals.get(det.code) || 0) + kgValue);
     });
-
-    const allCodes = new Set([...appState.additives.masterData.map(m => m.code), ...(hasSap ? Object.keys(appState.additives.previousInventory) : []), ...Array.from(detectedTotals.keys())]);
-    const masterDataMap = new Map(appState.additives.masterData.map(m => [m.code, m]));
-
-    let reportData = Array.from(allCodes).map(code => {
+    
+    const allCodes = new Set([...appState.additives.masterData.map(m => m.code), ...Array.from(detectedTotals.keys())]);
+    
+    const reportData = Array.from(allCodes).map(code => {
         const material = masterDataMap.get(code);
         if (!material) return null;
         const detected = detectedTotals.get(code) || 0;
-        const sap = appState.additives.previousInventory[code] || 0;
-        let deltaPercent = 'N/A', tolerance = '', highDelta = '';
-        if (hasSap) {
-            const deviation = sap !== 0 ? (detected - sap) / sap : (detected > 0 ? Infinity : 0);
-            deltaPercent = (sap !== 0 || detected > 0) ? deviation : 0;
-            if (Math.abs(deviation) <= 0.03) tolerance = 'X';
-            if (Math.abs(deviation) >= 0.30) highDelta = 'X';
-        }
-        return { code: material.code, description: material.description, sap, detected, deltaPercent, tolerance, highDelta };
-    }).filter(Boolean).sort((a,b) => a.description.localeCompare(b.description));
+        const initialSap = appState.additives.previousInventory[code] || 0;
+        return { code, description: material.description, detected, initialSap };
+    }).filter(Boolean).sort((a, b) => a.description.localeCompare(b.description));
 
-    const headers = ["Codice Materiale", "Descrizione Materiale", "Giacenza Rilevata (KG)"];
-    if (hasSap) headers.push("Giacenza SAP (KG)", "Delta (%)", "In Tolleranza (±3%)", "Delta Elevato (±30%)");
-    
-    const dataForSheet = reportData.map(item => hasSap ? [item.code, item.description, item.detected, item.sap, item.deltaPercent, item.tolerance, item.highDelta] : [item.code, item.description, item.detected]);
-    
-    const summaryWorksheet = XLSX.utils.aoa_to_sheet([headers, ...dataForSheet]);
-    
-    for (let i = 1; i <= dataForSheet.length; i++) {
-        const rowNum = i + 1;
-        if(summaryWorksheet[`A${rowNum}`]) summaryWorksheet[`A${rowNum}`].t = 's';
-        if (hasSap && summaryWorksheet[`E${rowNum}`] && typeof summaryWorksheet[`E${rowNum}`].v === 'number') {
-            summaryWorksheet[`E${rowNum}`].z = '0.00%';
-        }
+    // --- Sheet 1: INV ---
+    const invHeaders = ["Codice Materiale", "Descrizione Materiale", "Giacenza Rilevata (KG)"];
+    if (hasInitialSap) {
+        invHeaders.push("Giacenza Iniziale (KG)", "Delta (%)");
     }
-    
+    const invSheetData = reportData.map(item => {
+        const row = [Number(item.code), item.description, item.detected];
+        if (hasInitialSap) {
+            row.push(item.initialSap);
+            const delta = item.initialSap !== 0 ? (item.detected - item.initialSap) / item.initialSap : (item.detected > 0 ? 1 : 0);
+            row.push({ t: 'n', v: delta, z: '0.00%' });
+        }
+        return row;
+    });
+    const invWS = XLSX.utils.aoa_to_sheet([invHeaders, ...invSheetData]);
+    invWS['!cols'] = [{wch: 15}, {wch: 50}, {wch: 20}, {wch: 20}, {wch: 15}];
+    invSheetData.forEach((_, i) => {
+        const r = i + 2;
+        invWS[`A${r}`].t = 'n'; invWS[`A${r}`].z = '0';
+        invWS[`C${r}`].t = 'n'; invWS[`C${r}`].z = '0.00';
+        if (hasInitialSap) {
+            invWS[`D${r}`].t = 'n'; invWS[`D${r}`].z = '0.00';
+        }
+    });
+    XLSX.utils.book_append_sheet(wb, invWS, "INV");
+
+
+    // --- Sheet 2: RIL ---
     const detailArray = appState.additives.currentDetections.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).map(det => ({
-        'Codice Materiale': det.code,
+        'Codice Materiale': Number(det.code),
         'Descrizione Materiale': masterDataMap.get(det.code)?.description || 'N/A',
         'Quantità Rilevata': det.quantity,
         'Unità di Misura': det.uom,
         'Valore Convertito (KG)': getKgValue(det.code, det.quantity, det.uom),
         'Ora di Registrazione': new Date(det.timestamp).toLocaleString('it-IT', { timeZone: 'Europe/Rome' })
     }));
+    const rilWS = XLSX.utils.json_to_sheet(detailArray);
+    rilWS['!cols'] = [{wch: 15}, {wch: 50}, {wch: 15}, {wch: 15}, {wch: 20}, {wch: 20}];
+    detailArray.forEach((_, i) => {
+        const r = i + 2;
+        rilWS[`A${r}`].t = 'n'; rilWS[`A${r}`].z = '0';
+    });
+    XLSX.utils.book_append_sheet(wb, rilWS, "RIL");
+    
+    // --- Sheet 4 (will be 3rd for user): GIAC FIN ---
+    const giacFinHeaders = ["Codice Materiale (incollare da SAP)", "Descrizione Materiale", "Quantità KG (incollare da SAP)"];
+    const giacFinWS = XLSX.utils.aoa_to_sheet([giacFinHeaders]);
+    giacFinWS['!cols'] = [{ wch: 35 }, { wch: 50 }, { wch: 35 }];
+    giacFinWS['B2'] = { f: `IFERROR(VLOOKUP(A2,AnagraficaHelper!A:B,2,FALSE),"")` };
+    XLSX.utils.book_append_sheet(wb, giacFinWS, "GIAC FIN");
 
-    const detailWorksheet = XLSX.utils.json_to_sheet(detailArray);
+    // --- Sheet 3 (will be 4th for user): RETT ---
+    const rettHeaders = ["Codice Materiale", "Descrizione Materiale", "Giacenza Rilevata", "Giacenza Effettiva", "Giacenza SAP di fine inventario", "Differenza Assoluta", "Variazione Percentuale", "Codice Rettifica"];
+    const rettSheetData = reportData.map((item, index) => {
+        const r = index + 2; // Excel row number
+        const giacenzaEffettivaFormula = `IF(AND(VLOOKUP(A${r},AnagraficaHelper!A:C,3,FALSE), IFERROR(ABS((C${r}-E${r})/E${r}),1)<=0.03), E${r}, C${r})`;
+        const diffAssolutaFormula = `IFERROR(ABS(E${r}-D${r}),"")`;
+        const variazionePercFormula = `IFERROR((C${r}-E${r})/E${r},0)`; // C (rilevata) vs E (sap finale)
+        const codiceRettificaFormula = `IF(ISBLANK(E${r}),"",IF(D${r}=E${r}, 0, IF(D${r} > E${r}, 202, 201)))`;
 
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, summaryWorksheet, "Riepilogo");
-    if (detailArray.length > 0) XLSX.utils.book_append_sheet(workbook, detailWorksheet, "Dettaglio Rilevazioni");
+        return [
+            Number(item.code), // A
+            item.description, // B
+            item.detected, // C
+            { t:'n', z:'0.00', f: giacenzaEffettivaFormula }, // D
+            { t:'n', z:'0.00', f: `IFERROR(VLOOKUP(A${r},'GIAC FIN'!A:C,3,FALSE),0)` }, // E
+            { t:'n', z:'0.00', f: diffAssolutaFormula }, // F
+            { t:'n', z:'0.00%', f: variazionePercFormula }, // G
+            { f: codiceRettificaFormula } // H
+        ];
+    });
+    
+    const rettWS = XLSX.utils.aoa_to_sheet([rettHeaders, ...rettSheetData]);
+    rettWS['!cols'] = [{wch:15}, {wch:50}, {wch:18, hidden: true}, {wch:18}, {wch:18}, {wch:18}, {wch:18}, {wch:15}];
+    const boldStyle = { font: { bold: true } };
+    rettSheetData.forEach((_, i) => {
+        const r = i + 2;
+        rettWS[`A${r}`].t = 'n'; rettWS[`A${r}`].z = '0';
+        rettWS[`C${r}`].t = 'n'; rettWS[`C${r}`].z = '0.00';
+        rettWS[`D${r}`].s = boldStyle; // Apply bold style to column D
+    });
+    XLSX.utils.book_append_sheet(wb, rettWS, "RETT");
 
+    // --- Sheet 5 (last and hidden): AnagraficaHelper ---
+    const anagraficaData = appState.additives.masterData.map(m => {
+        const conversionKeys = Object.keys(m).filter(k => !['id', 'code', 'description', 'kg'].includes(k.toLowerCase()));
+        const hasIbcSil = conversionKeys.some(k => ['IBC', 'SIL'].includes(k.toUpperCase()));
+        // TRUE if it has IBC/SIL or if it has NO conversion factors at all (only KG)
+        const isToleranceApplicable = hasIbcSil || conversionKeys.length === 0;
+        return [Number(m.code), m.description, isToleranceApplicable];
+    });
+    const anagraficaWS = XLSX.utils.aoa_to_sheet([["Codice", "Descrizione", "Tolleranza_Applicabile"], ...anagraficaData]);
+    anagraficaWS['!cols'] = [{wch:15}, {wch:50}, {wch:20}];
+    XLSX.utils.book_append_sheet(wb, anagraficaWS, "AnagraficaHelper");
+    wb.Sheets["AnagraficaHelper"].Hidden = 1;
+    
+    // Set Sheet Order
+    wb.SheetNames = ["INV", "RIL", "RETT", "GIAC FIN", "AnagraficaHelper"];
+
+    // --- Final file generation ---
     const now = new Date();
     const options = { timeZone: 'Europe/Rome', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false };
     const formatter = new Intl.DateTimeFormat('sv-SE', options);
-    const formattedDate = formatter.format(now).replace(' ', '_').replace(':', '-');
-    const fileName = `Inventario_Additivi_${formattedDate}.xlsx`;
-    XLSX.writeFile(workbook, fileName);
+    const [date, time] = formatter.format(now).split(' ');
+    const formattedDate = `${date}_${time.replace(':', '-')}`;
+    const fileName = `Inventario additivi ${formattedDate}.xlsx`;
+    XLSX.writeFile(wb, fileName);
 }
 
 function generateMasterDataExport() {
@@ -2299,32 +2405,45 @@ function handleCelluloseMasterFileChange(e) {
             const data = event.target?.result;
             const workbook = XLSX.read(data, { type: file.name.endsWith('.csv') ? 'string' : 'array' });
             const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-            const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-                header: [
-                    'codice_materiale', 'codice_gruppo_origine', 'nome_gruppo_origine',
-                    'sequenza_elenco_gruppo', 'descrizione_materiale', 'totale_pacchi_completo',
-                    'PAC', 'CAMION'
-                ],
-                range: 1 // Skip header row
-            });
-
-            if (jsonData.length === 0) return;
-
-            const newMasterData = jsonData.map((row, index) => {
-                if (!row.codice_materiale || !row.descrizione_materiale) {
-                    console.warn(`Skipping row ${index + 2}: missing code or description.`);
+            // Load by position (header: 1)
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            
+            if (jsonData.length < 2) { // Must have at least one header and one data row
+                throw new Error("Il file è vuoto o contiene solo l'intestazione.");
+            }
+            
+            // Skip header row by starting loop at 1
+            const newMasterData = jsonData.slice(1).map((row, index) => {
+                // Check if essential columns (by position) exist
+                if (row[0] == null || row[4] == null) {
+                    console.warn(`Riga ${index + 2} saltata: codice o descrizione mancante.`);
                     return null;
                 }
-                return { ...row, id: `${Date.now()}${index}` };
+                return { 
+                    id: `${Date.now()}${index}`,
+                    codice_materiale: row[0],
+                    codice_gruppo_origine: row[1],
+                    nome_gruppo_origine: row[2],
+                    sequenza_elenco_gruppo: row[3],
+                    descrizione_materiale: row[4],
+                    totale_pacchi_completo: row[5],
+                    PAC: row[6],
+                    CAMION: row[7]
+                };
             }).filter(Boolean);
+            
+            if(newMasterData.length === 0) {
+                 throw new Error("Nessuna riga valida trovata nel file. Controlla che i dati siano nelle colonne A (Codice) e E (Descrizione).");
+            }
             
             appState.cellulose.masterData = newMasterData;
             renderCelluloseMasterView();
             saveData();
+            showAlert("Anagrafica cellulosa caricata con successo.");
 
         } catch (error) {
             console.error("Error reading cellulose master data file.", error);
-            showAlert("Errore durante la lettura del file. Assicurati che sia nel formato corretto.");
+            showAlert(`Errore durante la lettura del file. Assicurati che sia nel formato corretto e che i dati siano presenti.\n\nDettaglio: ${error.message}`);
         } finally {
             e.target.value = ''; // Reset file input
         }
@@ -2674,6 +2793,15 @@ function setupEventListeners() {
     exportBtn.addEventListener('click', generateExcelExport);
     
     // Master Data LIST View (Additives)
+    additivesMasterInfoBtn.addEventListener('click', () => {
+        showAlert(
+            'Il file per l\'anagrafica additivi deve essere un Excel (.xlsx) o .csv.\n\n' +
+            'Le colonne obbligatorie sono:\n' +
+            '- "Codice" (o "Code")\n' +
+            '- "Descrizione" (o "Description")\n\n' +
+            'Qualsiasi altra colonna verrà importata come fattore di conversione (es. colonna "IBC" con valore 1000 significa 1 IBC = 1000 KG).'
+        );
+    });
     masterAddArticleBtn.addEventListener('click', () => {
         editingMasterDataId = 'new';
         navigateTo('master-edit');
@@ -2752,7 +2880,7 @@ function setupEventListeners() {
             cellulosePreviousInventoryEditMode = !cellulosePreviousInventoryEditMode;
             renderCelluloseCheckPreviousInventorySubview();
         } else if (e.target.closest('#cellulose-previous-export-btn')) {
-            generateCelluloseExport(appState.cellulose.previousInventory, 'Inventario_Precedente');
+            generateCelluloseExport();
         } else if (e.target.closest('#cellulose-previous-delete-btn')) {
             handleCelluloseDeletePrevious();
         }
@@ -2773,7 +2901,7 @@ function setupEventListeners() {
     });
 
     // Cellulose Export View
-    celluloseExportCurrentBtn.addEventListener('click', () => generateCelluloseExport(appState.cellulose.celluloseCounts, 'Inventario_Cellulosa_Attuale'));
+    celluloseExportCurrentBtn.addEventListener('click', generateCelluloseExport);
     celluloseSetAsPreviousBtn.addEventListener('click', handleCelluloseSetAsPrevious);
 
     // Cellulose Entry Modal
@@ -2922,6 +3050,21 @@ function setupEventListeners() {
     });
     
     // Cellulose Master View
+    celluloseMasterInfoBtn.addEventListener('click', () => {
+        showAlert(
+            'Il file per l\'anagrafica cellulosa deve essere un Excel (.xlsx) o .csv.\n\n' +
+            'Le colonne devono essere nel seguente ordine esatto:\n' +
+            'A: Codice Materiale\n' +
+            'B: Codice Gruppo\n' +
+            'C: Nome Gruppo\n' +
+            'D: Sequenza\n' +
+            'E: Descrizione\n' +
+            'F: Totale Pacchi\n' +
+            'G: BAL per PAC\n' +
+            'H: KG per CAMION\n\n' +
+            'L\'app identificherà le colonne in base a questa posizione, non al nome dell\'intestazione.'
+        );
+    });
     celluloseMasterDataFileInput.addEventListener('change', handleCelluloseMasterFileChange);
     celluloseMasterExportBtn.addEventListener('click', generateCelluloseMasterExport);
     celluloseMasterDataFilter.addEventListener('input', renderCelluloseMasterView);
@@ -2989,14 +3132,13 @@ function handleCellulosePreviousFileChange(e) {
             const data = event.target?.result;
             const workbook = XLSX.read(data, { type: 'array' });
             
-            // We expect the "Dettaglio" sheet from our own export
-            const detailSheetName = "Dettaglio";
-            if (!workbook.SheetNames.includes(detailSheetName)) {
-                showAlert(`File non valido. Manca il foglio "${detailSheetName}".`);
+            const modSheetName = "MOD";
+            if (!workbook.SheetNames.includes(modSheetName)) {
+                showAlert(`File non valido. Manca il foglio "${modSheetName}". Assicurati di usare un file esportato dalla nuova versione dell'app.`);
                 return;
             }
             
-            const worksheet = workbook.Sheets[detailSheetName];
+            const worksheet = workbook.Sheets[modSheetName];
             const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
             if (jsonData.length === 0) return;
@@ -3005,26 +3147,25 @@ function handleCellulosePreviousFileChange(e) {
             const masterDataMap = new Map(appState.cellulose.masterData.map(m => [m.codice_materiale.toString(), m]));
 
             jsonData.forEach(row => {
-                const code = row['codice_materiale'].toString();
+                const code = row['Codice Materiale'].toString();
                 const material = masterDataMap.get(code);
                 if (!material) return; // Skip if material not in current master data
 
                 const materialId = material.id;
-                const uom = row['unità_di_misura'];
-                const quantity = Number(row['quantità_inserita']);
-                const timestamp = new Date(row['ora_registrazione'] || Date.now()).toISOString();
+                const uom = row['Unità di Misura Inserita'];
+                const totalQuantity = Number(row['Totale per Unità']);
 
-                if (!uom || isNaN(quantity) || quantity <= 0) return;
+                if (!uom || isNaN(totalQuantity) || totalQuantity <= 0) return;
 
                 if (!newPreviousInventory[materialId]) newPreviousInventory[materialId] = {};
-                if (!newPreviousInventory[materialId][uom]) newPreviousInventory[materialId][uom] = [];
-                newPreviousInventory[materialId][uom].push({ value: quantity, timestamp });
+                // Create a single entry representing the total from the MOD sheet
+                newPreviousInventory[materialId][uom] = [{ value: totalQuantity, timestamp: new Date().toISOString() }];
             });
             
             appState.cellulose.previousInventory = newPreviousInventory;
             saveData();
             renderCelluloseCheckView();
-            showAlert("Inventario precedente caricato con successo.");
+            showAlert("Inventario precedente caricato con successo dal foglio MOD.");
 
         } catch (error) {
             console.error("Error reading previous inventory file.", error);
@@ -3036,59 +3177,105 @@ function handleCellulosePreviousFileChange(e) {
     reader.readAsArrayBuffer(file);
 }
 
-function generateCelluloseExport(countsObject, baseFileName) {
-    if (appState.cellulose.masterData.length === 0 || Object.keys(countsObject).length === 0) {
+function generateCelluloseExport() {
+    if (appState.cellulose.masterData.length === 0 || Object.keys(appState.cellulose.celluloseCounts).length === 0) {
         showAlert("Nessun dato da esportare.");
         return;
     }
 
+    const countsObject = appState.cellulose.celluloseCounts;
     const masterDataMap = new Map(appState.cellulose.masterData.map(m => [m.id, m]));
-
-    // Summary Sheet
-    const summaryData = appState.cellulose.masterData
+    const wb = XLSX.utils.book_new();
+    
+    // --- Sheet 1: INV ---
+    const invData = appState.cellulose.masterData
         .map(material => {
             const total = calculateCelluloseTotal(material, countsObject);
+            if (total === 0) return null; // Only include counted items in summary
             const totalUnit = material.PAC ? 'BAL' : 'KG';
             return {
-                'codice_materiale': material.codice_materiale,
-                'descrizione_materiale': material.descrizione_materiale,
-                'quantità_totale': total,
-                'unità_finale': totalUnit,
+                'Codice Materiale': Number(material.codice_materiale),
+                'Descrizione Materiale': material.descrizione_materiale,
+                'Totale Rilevato': total,
+                'Unità di Misura Finale': totalUnit,
             };
         })
-        .sort((a,b) => a['descrizione_materiale'].localeCompare(b['descrizione_materiale']));
+        .filter(Boolean)
+        .sort((a,b) => a['Descrizione Materiale'].localeCompare(b['Descrizione Materiale']));
     
-    const summaryWorksheet = XLSX.utils.json_to_sheet(summaryData);
+    const invWS = XLSX.utils.json_to_sheet(invData);
+    invWS['!cols'] = [{wch: 15}, {wch: 50}, {wch: 15}, {wch: 15}];
+    invData.forEach((_, i) => {
+        const r = i + 2;
+        invWS[`A${r}`].t = 'n';
+        invWS[`A${r}`].z = '0';
+    });
+    XLSX.utils.book_append_sheet(wb, invWS, "INV");
 
-    // Detail Sheet
-    let detailData = [];
+    // --- Sheet 2: MOD ---
+    let modData = [];
+    for (const materialId in countsObject) {
+        const material = masterDataMap.get(materialId);
+        if (!material) continue;
+        for (const uom in countsObject[materialId]) {
+            const totalPerUom = calculateCelluloseUOMTotal(materialId, uom, countsObject);
+            if (totalPerUom > 0) {
+                modData.push({
+                    'Codice Materiale': Number(material.codice_materiale),
+                    'Descrizione Materiale': material.descrizione_materiale,
+                    'Unità di Misura Inserita': uom,
+                    'Totale per Unità': totalPerUom
+                });
+            }
+        }
+    }
+    modData.sort((a,b) => a['Descrizione Materiale'].localeCompare(b['Descrizione Materiale']));
+    const modWS = XLSX.utils.json_to_sheet(modData);
+    modWS['!cols'] = [{wch: 15}, {wch: 50}, {wch: 20}, {wch: 15}];
+    modData.forEach((_, i) => {
+        const r = i + 2;
+        modWS[`A${r}`].t = 'n';
+        modWS[`A${r}`].z = '0';
+    });
+    XLSX.utils.book_append_sheet(wb, modWS, "MOD");
+
+    // --- Sheet 3: RIL ---
+    let rilData = [];
     for (const materialId in countsObject) {
         const material = masterDataMap.get(materialId);
         if (!material) continue;
         for (const uom in countsObject[materialId]) {
             countsObject[materialId][uom].forEach(entry => {
-                detailData.push({
-                    'codice_materiale': material.codice_materiale,
-                    'descrizione_materiale': material.descrizione_materiale,
-                    'unità_di_misura': uom,
-                    'quantità_inserita': entry.value,
-                    'ora_registrazione': new Date(entry.timestamp).toLocaleString('it-IT')
+                rilData.push({
+                    'Codice Materiale': Number(material.codice_materiale),
+                    'Descrizione Materiale': material.descrizione_materiale,
+                    'Quantità': entry.value,
+                    'Unità di Misura': uom,
+                    'Ora': new Date(entry.timestamp).toLocaleString('it-IT', { timeZone: 'Europe/Rome' })
                 });
             });
         }
     }
-    detailData.sort((a,b) => new Date(b['ora_registrazione']) - new Date(a['ora_registrazione']));
-    const detailWorksheet = XLSX.utils.json_to_sheet(detailData);
+    rilData.sort((a,b) => new Date(b['Ora']) - new Date(a['Ora']));
+    const rilWS = XLSX.utils.json_to_sheet(rilData);
+    rilWS['!cols'] = [{wch: 15}, {wch: 50}, {wch: 10}, {wch: 15}, {wch: 20}];
+    rilData.forEach((_, i) => {
+        const r = i + 2;
+        rilWS[`A${r}`].t = 'n';
+        rilWS[`A${r}`].z = '0';
+    });
+    XLSX.utils.book_append_sheet(wb, rilWS, "RIL");
 
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, summaryWorksheet, "Riepilogo");
-    XLSX.utils.book_append_sheet(workbook, detailWorksheet, "Dettaglio");
-
+    // --- Filename and Download ---
     const now = new Date();
-    const formattedDate = now.toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
-    const fileName = `${baseFileName}_${formattedDate}.xlsx`;
-    XLSX.writeFile(workbook, fileName);
+    const options = { timeZone: 'Europe/Rome', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false };
+    const formatter = new Intl.DateTimeFormat('sv-SE', options);
+    const [date, time] = formatter.format(now).split(' ');
+    const formattedDate = `${date}_${time.replace(':', '-')}`;
+    const fileName = `Inventario cellulose ${formattedDate}.xlsx`;
+    XLSX.writeFile(wb, fileName);
 }
+
 
 // --- APP INITIALIZATION ---
 function init() {
@@ -3104,4 +3291,7 @@ document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
+
+
+
 
