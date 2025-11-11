@@ -82,6 +82,7 @@
   }
 }
 </script>
+<link rel="stylesheet" href="/index.css">
 </head>
   <body>
     <!-- Mode Selection Screen -->
@@ -2498,64 +2499,82 @@ function generateMasterDataExport() {
 
 function handleCelluloseMasterFileChange(e) {
     const file = e.target.files?.[0];
+    const fileInput = e.target;
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        try {
-            const data = event.target?.result;
-            const workbook = XLSX.read(data, { type: file.name.endsWith('.csv') ? 'string' : 'array' });
-            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-            // Load by position (header: 1)
-            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-            
-            if (jsonData.length < 2) { // Must have at least one header and one data row
-                throw new Error("Il file è vuoto o contiene solo l'intestazione.");
-            }
-            
-            // Skip header row by starting loop at 1
-            const newMasterData = jsonData.slice(1).map((row, index) => {
-                // Check if essential columns (by position) exist
-                if (row[0] == null || row[4] == null) {
-                    console.warn(`Riga ${index + 2} saltata: codice o descrizione mancante.`);
-                    return null;
-                }
-                return { 
-                    id: `${Date.now()}${index}`,
-                    codice_materiale: row[0],
-                    codice_gruppo_origine: row[1],
-                    nome_gruppo_origine: row[2],
-                    sequenza_elenco_gruppo: row[3],
-                    descrizione_materiale: row[4],
-                    totale_pacchi_completo: row[5],
-                    PAC: row[6],
-                    CAMION: row[7]
-                };
-            }).filter(Boolean);
-            
-            if(newMasterData.length === 0) {
-                 throw new Error("Nessuna riga valida trovata nel file. Controlla che i dati siano nelle colonne A (Codice) e E (Descrizione).");
-            }
-            
-            appState.cellulose.masterData = newMasterData;
-            renderCelluloseMasterView();
-            saveData();
-            showAlert("Anagrafica cellulosa caricata con successo.");
+    const processFileLogic = () => {
+        // This logic runs if user confirms, so we clear inventory
+        if (appState.cellulose.inventoryInProgress) {
+            appState.cellulose.celluloseCounts = {};
+            appState.cellulose.inventoryInProgress = false;
+        }
 
-        } catch (error) {
-            console.error("Error reading cellulose master data file.", error);
-            showAlert(`Errore durante la lettura del file. Assicurati che sia nel formato corretto e che i dati siano presenti.\n\nDettaglio: ${error.message}`);
-        } finally {
-            e.target.value = ''; // Reset file input
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const data = event.target?.result;
+                const workbook = XLSX.read(data, { type: file.name.endsWith('.csv') ? 'string' : 'array' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                
+                if (jsonData.length < 2) {
+                    throw new Error("Il file è vuoto o contiene solo l'intestazione.");
+                }
+                
+                const newMasterData = jsonData.slice(1).map((row, index) => {
+                    if (row[0] == null || row[4] == null) {
+                        console.warn(`Riga ${index + 2} saltata: codice o descrizione mancante.`);
+                        return null;
+                    }
+                    return { 
+                        id: `${Date.now()}${index}`,
+                        codice_materiale: row[0],
+                        codice_gruppo_origine: row[1],
+                        nome_gruppo_origine: row[2],
+                        sequenza_elenco_gruppo: row[3],
+                        descrizione_materiale: row[4],
+                        totale_pacchi_completo: row[5],
+                        PAC: row[6],
+                        CAMION: row[7]
+                    };
+                }).filter(Boolean);
+                
+                if(newMasterData.length === 0) {
+                     throw new Error("Nessuna riga valida trovata nel file. Controlla che i dati siano nelle colonne A (Codice) e E (Descrizione).");
+                }
+                
+                appState.cellulose.masterData = newMasterData;
+                renderCelluloseMasterView();
+                renderAppLayout(); // Update nav items state if inventory was cleared
+                saveData();
+                showAlert("Anagrafica cellulosa caricata con successo.");
+
+            } catch (error) {
+                console.error("Error reading cellulose master data file.", error);
+                showAlert(`Errore durante la lettura del file. Assicurati che sia nel formato corretto e che i dati siano presenti.\n\nDettaglio: ${error.message}`);
+            } finally {
+                fileInput.value = ''; // Reset file input to allow re-selection
+            }
+        };
+
+        if (file.name.endsWith('.csv')) {
+            reader.readAsText(file);
+        } else {
+            reader.readAsArrayBuffer(file);
         }
     };
 
-    if (file.name.endsWith('.csv')) {
-        reader.readAsText(file);
+    if (appState.cellulose.inventoryInProgress) {
+        showModal(
+            'Attenzione: un inventario è già in corso. Caricando una nuova anagrafica, i conteggi correnti verranno persi e sarà necessario iniziarne uno nuovo. Vuoi procedere?',
+            processFileLogic
+        );
+        fileInput.value = '';
     } else {
-        reader.readAsArrayBuffer(file);
+        processFileLogic();
     }
 }
+
 
 function generateCelluloseMasterExport() {
     if (appState.cellulose.masterData.length === 0) {
@@ -3014,7 +3033,14 @@ function setupEventListeners() {
         const { material, uom, isPrevious } = activeCelluloseEntry;
         const countsObject = isPrevious ? appState.cellulose.previousInventory : appState.cellulose.celluloseCounts;
         const input = celluloseModalEntriesList.querySelector('.cellulose-modal-new-input');
-        const value = parseInt(input.value, 10);
+        
+        let value;
+        const inputValue = input.value.replace(',', '.');
+        if (material && material.CAMION) {
+            value = parseFloat(inputValue);
+        } else {
+            value = parseInt(inputValue, 10);
+        }
 
         if (material && uom && !isNaN(value) && value > 0) {
             if (!countsObject[material.id]) countsObject[material.id] = {};
@@ -3040,7 +3066,14 @@ function setupEventListeners() {
             inputs.forEach(input => {
                 const originalIndex = parseInt(input.dataset.originalIndex, 10);
                 const originalEntry = originalEntries[originalIndex];
-                const newValue = parseInt(input.value, 10);
+                
+                let newValue;
+                const inputValue = input.value.replace(',', '.');
+                if (material && material.CAMION) {
+                    newValue = parseFloat(inputValue);
+                } else {
+                    newValue = parseInt(inputValue, 10);
+                }
 
                 if (originalEntry) {
                     // Find the corresponding original entry to reverse it back later
@@ -3336,6 +3369,7 @@ function generateCelluloseExport() {
             const balTotal = calculateCelluloseUOMTotal(material.id, 'BAL', countsObject);
             const camionTotal = calculateCelluloseUOMTotal(material.id, 'CAMION', countsObject);
             const kgTotal = camionTotal * (Number(material.CAMION) || 0);
+            const totalBales = material.PAC ? (pacTotal * Number(material.PAC)) + balTotal : '';
 
             modSheetData.push([
                 Number(material.codice_materiale),
@@ -3343,7 +3377,8 @@ function generateCelluloseExport() {
                 pacTotal > 0 ? pacTotal : '',
                 balTotal > 0 ? balTotal : '',
                 camionTotal > 0 ? camionTotal : '',
-                kgTotal > 0 ? kgTotal : ''
+                kgTotal > 0 ? kgTotal : '',
+                totalBales > 0 ? totalBales : ''
             ]);
         });
         modSheetData.push([]); // Empty row
@@ -3356,9 +3391,9 @@ function generateCelluloseExport() {
 
     const modWS = XLSX.utils.aoa_to_sheet(modSheetData);
     // Add headers manually after creation to avoid them being part of the grouped list
-    XLSX.utils.sheet_add_aoa(modWS, [["Codice Materiale", "Descrizione Materiale", "PAC", "BAL", "CAMION", "KG"]], { origin: "A1" });
+    XLSX.utils.sheet_add_aoa(modWS, [["Codice Materiale", "Descrizione Materiale", "PAC", "BAL", "CAMION", "KG", "Totale Balle"]], { origin: "A1" });
     
-    modWS['!cols'] = [{wch: 15}, {wch: 50}, {wch: 10}, {wch: 10}, {wch: 10}, {wch: 15}];
+    modWS['!cols'] = [{wch: 15}, {wch: 50}, {wch: 10}, {wch: 10}, {wch: 10}, {wch: 15}, {wch: 15}];
     modSheetData.forEach((row, i) => {
         if (row[0] && typeof row[0] === 'number') { // Check if it's a material row
             const r = i + 2; // +1 for header, +1 for 1-based index
@@ -3422,5 +3457,6 @@ function init() {
 // Start the application
 document.addEventListener('DOMContentLoaded', init);
     </script>
+<script type="module" src="/index.tsx"></script>
 </body>
 </html>
